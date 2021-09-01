@@ -186,7 +186,5 @@ namespace WPEFramework {
             static DisplaySettings* _instance;
 
         };
-
-        void setResponseArray(JsonObject& response, const char* key, const std::vector<std::string>& items);
 	} // namespace Plugin
 } // namespace WPEFramework
