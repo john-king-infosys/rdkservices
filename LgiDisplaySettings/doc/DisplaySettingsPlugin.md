@@ -1,12 +1,12 @@
 <!-- Generated automatically, DO NOT EDIT! -->
-<a name="head.DisplaySettings_Plugin"></a>
-# DisplaySettings Plugin
+<a name="head.LgiDisplaySettings_Plugin"></a>
+# LgiDisplaySettings Plugin
 
-**Version: 2.0**
+**Version: 1.0**
 
 **Status: :black_circle::black_circle::black_circle:**
 
-org.rdk.DisplaySettings plugin for Thunder framework.
+com.lgi.rdk.DisplaySettings plugin for Thunder framework.
 
 ### Table of Contents
 
@@ -22,7 +22,7 @@ org.rdk.DisplaySettings plugin for Thunder framework.
 <a name="head.Scope"></a>
 ## Scope
 
-This document describes purpose and functionality of the org.rdk.DisplaySettings plugin. It includes detailed specification about its configuration, methods provided and notifications sent.
+This document describes purpose and functionality of the com.lgi.rdk.DisplaySettings plugin. It includes detailed specification about its configuration, methods provided and notifications sent.
 
 <a name="head.Case_Sensitivity"></a>
 ## Case Sensitivity
@@ -71,15 +71,15 @@ The table below lists configuration options of the plugin.
 
 | Name | Type | Description |
 | :-------- | :-------- | :-------- |
-| callsign | string | Plugin instance name (default: *org.rdk.DisplaySettings*) |
-| classname | string | Class name: *org.rdk.DisplaySettings* |
+| callsign | string | Plugin instance name (default: *com.lgi.rdk.DisplaySettings*) |
+| classname | string | Class name: *com.lgi.rdk.DisplaySettings* |
 | locator | string | Library name: *libWPEFrameworkDisplaySettings.so* |
 | autostart | boolean | Determines if the plugin shall be started automatically along with the framework |
 
 <a name="head.Methods"></a>
 # Methods
 
-The following methods are provided by the org.rdk.DisplaySettings plugin:
+The following methods are provided by the com.lgi.rdk.DisplaySettings plugin:
 
 DisplaySettings interface methods:
 
@@ -186,7 +186,7 @@ Enables or disables Surround Decoder capability. The Surround Decoder is an upmi
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.enableSurroundDecoder",
+    "method": "com.lgi.rdk.DisplaySettings.1.enableSurroundDecoder",
     "params": {
         "audioPort": "SPEAKER0",
         "surroundDecoderEnable": true
@@ -241,7 +241,7 @@ Returns `true` if the STB HDMI output is currently connected to the active input
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getActiveInput",
+    "method": "com.lgi.rdk.DisplaySettings.1.getActiveInput",
     "params": {
         "videoDisplay": "HDMI0"
     }
@@ -289,7 +289,7 @@ Returns the audio delay (in ms) on the selected audio port. If the `audioPort` a
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getAudioDelay",
+    "method": "com.lgi.rdk.DisplaySettings.1.getAudioDelay",
     "params": {
         "audioPort": "HDMI0"
     }
@@ -337,7 +337,7 @@ Returns the audio delay offset (in ms) on the selected audio port. If the `audio
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getAudioDelayOffset",
+    "method": "com.lgi.rdk.DisplaySettings.1.getAudioDelayOffset",
     "params": {
         "audioPort": "HDMI0"
     }
@@ -386,7 +386,7 @@ Returns the current status of the Bass Enhancer settings.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getBassEnhancer",
+    "method": "com.lgi.rdk.DisplaySettings.1.getBassEnhancer",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -433,7 +433,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getConnectedAudioPorts"
+    "method": "com.lgi.rdk.DisplaySettings.1.getConnectedAudioPorts"
 }
 ```
 
@@ -478,7 +478,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getConnectedVideoDisplays"
+    "method": "com.lgi.rdk.DisplaySettings.1.getConnectedVideoDisplays"
 }
 ```
 
@@ -526,7 +526,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getCurrentOutputSettings"
+    "method": "com.lgi.rdk.DisplaySettings.1.getCurrentOutputSettings"
 }
 ```
 
@@ -575,7 +575,7 @@ Returns the current resolution on the selected video display port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getCurrentResolution",
+    "method": "com.lgi.rdk.DisplaySettings.1.getCurrentResolution",
     "params": {
         "videoDisplay": "HDMI0"
     }
@@ -620,7 +620,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getDefaultResolution"
+    "method": "com.lgi.rdk.DisplaySettings.1.getDefaultResolution"
 }
 ```
 
@@ -663,7 +663,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getDialogEnhancement"
+    "method": "com.lgi.rdk.DisplaySettings.1.getDialogEnhancement"
 }
 ```
 
@@ -706,7 +706,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getDolbyVolumeMode"
+    "method": "com.lgi.rdk.DisplaySettings.1.getDolbyVolumeMode"
 }
 ```
 
@@ -751,7 +751,7 @@ Returns the current Dynamic Range Control mode.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getDRCMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.getDRCMode",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -799,7 +799,7 @@ Returns the current Dynamic Range Control mode.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getEnableAudioPort",
+    "method": "com.lgi.rdk.DisplaySettings.1.getEnableAudioPort",
     "params": {
         "audioPort": "HDMI0"
     }
@@ -847,7 +847,7 @@ Returns the current gain value.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getGain",
+    "method": "com.lgi.rdk.DisplaySettings.1.getGain",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -896,7 +896,7 @@ Returns the current Graphic Equalizer Mode setting (port HDMI0).
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getGraphicEqualizerMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.getGraphicEqualizerMode",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -943,7 +943,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getIntelligentEqualizerMode"
+    "method": "com.lgi.rdk.DisplaySettings.1.getIntelligentEqualizerMode"
 }
 ```
 
@@ -989,7 +989,7 @@ Returns the current status of Media Intelligence Steering settings.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getMISteering",
+    "method": "com.lgi.rdk.DisplaySettings.1.getMISteering",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1035,7 +1035,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getMS12AudioCompression"
+    "method": "com.lgi.rdk.DisplaySettings.1.getMS12AudioCompression"
 }
 ```
 
@@ -1081,7 +1081,7 @@ Returns the current MS12 audio profile settings.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getMS12AudioProfile",
+    "method": "com.lgi.rdk.DisplaySettings.1.getMS12AudioProfile",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1129,7 +1129,7 @@ Returns whether audio is muted on a given port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getMuted",
+    "method": "com.lgi.rdk.DisplaySettings.1.getMuted",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1178,7 +1178,7 @@ Returns the set-top audio capabilities for the specified audio port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSettopAudioCapabilities",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSettopAudioCapabilities",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1227,7 +1227,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSettopHDRSupport"
+    "method": "com.lgi.rdk.DisplaySettings.1.getSettopHDRSupport"
 }
 ```
 
@@ -1276,7 +1276,7 @@ Returns the set-top MS12 audio capabilities for the specified audio port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSettopMS12Capabilities",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSettopMS12Capabilities",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1323,7 +1323,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSinkAtmosCapability"
+    "method": "com.lgi.rdk.DisplaySettings.1.getSinkAtmosCapability"
 }
 ```
 
@@ -1368,7 +1368,7 @@ Returns the sound mode for the incoming video display. If the argument is `Null`
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSoundMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSoundMode",
     "params": {
         "audioPort": "HDMI0"
     }
@@ -1423,7 +1423,7 @@ For **Auto** mode in DS5, this API has the following extra specification:
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedAudioModes",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedAudioModes",
     "params": {
         "audioPort": "HDMI0"
     }
@@ -1471,7 +1471,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedAudioPorts"
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedAudioPorts"
 }
 ```
 
@@ -1519,7 +1519,7 @@ Returns list of platform supported MS12 audio profiles for the specified audio p
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedMS12AudioProfiles",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedMS12AudioProfiles",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1570,7 +1570,7 @@ Returns supported resolutions on the selected video display port (both TV and ST
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedResolutions",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedResolutions",
     "params": {
         "videoDisplay": "HDMI0"
     }
@@ -1618,7 +1618,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedSettopResolutions"
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedSettopResolutions"
 }
 ```
 
@@ -1666,7 +1666,7 @@ Returns supported TV resolutions on the selected video display port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedTvResolutions",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedTvResolutions",
     "params": {
         "videoDisplay": "HDMI0"
     }
@@ -1714,7 +1714,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSupportedVideoDisplays"
+    "method": "com.lgi.rdk.DisplaySettings.1.getSupportedVideoDisplays"
 }
 ```
 
@@ -1762,7 +1762,7 @@ Returns the current surround virtualizer boost settings.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSurroundVirtualizer",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSurroundVirtualizer",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1812,7 +1812,7 @@ Returns the current surround virtualizer boost settings.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getSurroundVirtualizer2",
+    "method": "com.lgi.rdk.DisplaySettings.1.getSurroundVirtualizer2",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -1863,7 +1863,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getTVHDRCapabilities"
+    "method": "com.lgi.rdk.DisplaySettings.1.getTVHDRCapabilities"
 }
 ```
 
@@ -1907,7 +1907,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getTvHDRSupport"
+    "method": "com.lgi.rdk.DisplaySettings.1.getTvHDRSupport"
 }
 ```
 
@@ -1956,7 +1956,7 @@ Returns video port status in standby mode (failure if the port name is missing).
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getVideoPortStatusInStandby",
+    "method": "com.lgi.rdk.DisplaySettings.1.getVideoPortStatusInStandby",
     "params": {
         "portName": "HDMI0"
     }
@@ -2005,7 +2005,7 @@ Returns the current volume level.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getVolumeLevel",
+    "method": "com.lgi.rdk.DisplaySettings.1.getVolumeLevel",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -2054,7 +2054,7 @@ Returns the current Volume Leveller setting.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getVolumeLeveller",
+    "method": "com.lgi.rdk.DisplaySettings.1.getVolumeLeveller",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -2104,7 +2104,7 @@ Returns the current Volume Leveller setting.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getVolumeLeveller2",
+    "method": "com.lgi.rdk.DisplaySettings.1.getVolumeLeveller2",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -2150,7 +2150,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.getZoomSetting"
+    "method": "com.lgi.rdk.DisplaySettings.1.getZoomSetting"
 }
 ```
 
@@ -2192,7 +2192,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.isConnectedDeviceRepeater"
+    "method": "com.lgi.rdk.DisplaySettings.1.isConnectedDeviceRepeater"
 }
 ```
 
@@ -2237,7 +2237,7 @@ Returns the current status of Surround Decoder.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.isSurroundDecoderEnabled",
+    "method": "com.lgi.rdk.DisplaySettings.1.isSurroundDecoderEnabled",
     "params": {
         "audioPort": "SPEAKER0"
     }
@@ -2282,7 +2282,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.readEDID"
+    "method": "com.lgi.rdk.DisplaySettings.1.readEDID"
 }
 ```
 
@@ -2324,7 +2324,7 @@ This method takes no parameters.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.readHostEDID"
+    "method": "com.lgi.rdk.DisplaySettings.1.readHostEDID"
 }
 ```
 
@@ -2368,7 +2368,7 @@ Sets ATMOS audio output mode (on HDMI0).
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setAudioAtmosOutputMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.setAudioAtmosOutputMode",
     "params": {
         "enable": true
     }
@@ -2415,7 +2415,7 @@ Sets the audio delay (in ms) on the selected audio port. If the `audioPort` argu
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setAudioDelay",
+    "method": "com.lgi.rdk.DisplaySettings.1.setAudioDelay",
     "params": {
         "audioPort": "HDMI0",
         "audioDelay": "0"
@@ -2463,7 +2463,7 @@ Sets the audio delay offset (in ms) on the selected audio port. If the `audioPor
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setAudioDelayOffset",
+    "method": "com.lgi.rdk.DisplaySettings.1.setAudioDelayOffset",
     "params": {
         "audioPort": "HDMI0",
         "audioDelayOffset": "0"
@@ -2511,7 +2511,7 @@ Sets the Bass Enhancer. Bass Enhancer provides the consumer a single control to 
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setBassEnhancer",
+    "method": "com.lgi.rdk.DisplaySettings.1.setBassEnhancer",
     "params": {
         "audioPort": "SPEAKER0",
         "bassBoost": 50
@@ -2559,7 +2559,7 @@ Sets the current resolution.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setCurrentResolution",
+    "method": "com.lgi.rdk.DisplaySettings.1.setCurrentResolution",
     "params": {
         "videoDisplay": "HDMI0",
         "resolution": "1080p"
@@ -2606,7 +2606,7 @@ Sets the Dialog Enhancer level. The method fails if no value is set.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setDialogEnhancement",
+    "method": "com.lgi.rdk.DisplaySettings.1.setDialogEnhancement",
     "params": {
         "enhancerlevel": 0
     }
@@ -2652,7 +2652,7 @@ Enables or disables Dolby Volume mode on audio track (audio output port HDMI0).
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setDolbyVolumeMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.setDolbyVolumeMode",
     "params": {
         "dolbyVolumeMode": true
     }
@@ -2699,7 +2699,7 @@ Sets the Dynamic Range Control (DRC) setting. DRC is a compression control appli
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setDRCMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.setDRCMode",
     "params": {
         "audioPort": "SPEAKER0",
         "DRCMode": 1
@@ -2747,7 +2747,7 @@ Enable or disable the specified audio port based on the input audio port ID. Thi
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setEnableAudioPort",
+    "method": "com.lgi.rdk.DisplaySettings.1.setEnableAudioPort",
     "params": {
         "audioPort": "HDMI0",
         "enable": true
@@ -2795,7 +2795,7 @@ Adjusts the gain on a specific port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setGain",
+    "method": "com.lgi.rdk.DisplaySettings.1.setGain",
     "params": {
         "audioPort": "SPEAKER0",
         "gain": 10.0
@@ -2843,7 +2843,7 @@ Sets the Graphic Equalizer Mode. The Graphic Equalizer is a multi-band equalizer
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setGraphicEqualizerMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.setGraphicEqualizerMode",
     "params": {
         "audioPort": "SPEAKER0",
         "graphicEqualizerMode": 2
@@ -2890,7 +2890,7 @@ Sets the Intelligent Equalizer mode (port HDMI0).
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setIntelligentEqualizerMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.setIntelligentEqualizerMode",
     "params": {
         "intelligentEqualizerMode": 2
     }
@@ -2937,7 +2937,7 @@ Enables or Disables Media Intelligent Steering. Media Intelligence analyzes audi
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setMISteering",
+    "method": "com.lgi.rdk.DisplaySettings.1.setMISteering",
     "params": {
         "audioPort": "SPEAKER0",
         "MISteeringEnable": true
@@ -2984,7 +2984,7 @@ Sets the audio dynamic range compression level (port HDMI0).
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setMS12AudioCompression",
+    "method": "com.lgi.rdk.DisplaySettings.1.setMS12AudioCompression",
     "params": {
         "compressionLevel": 5
     }
@@ -3031,7 +3031,7 @@ Sets the selected MS12 audio profile.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setMS12AudioProfile",
+    "method": "com.lgi.rdk.DisplaySettings.1.setMS12AudioProfile",
     "params": {
         "audioPort": "SPEAKER0",
         "ms12AudioProfile": "Game"
@@ -3079,7 +3079,7 @@ Mutes or unmutes audio on a specific port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setMuted",
+    "method": "com.lgi.rdk.DisplaySettings.1.setMuted",
     "params": {
         "audioPort": "SPEAKER0",
         "muted": true
@@ -3137,7 +3137,7 @@ Possible values:
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setScartParameter",
+    "method": "com.lgi.rdk.DisplaySettings.1.setScartParameter",
     "params": {
         "scartParameter": "aspect_ratio",
         "scartParameterData": "4x3"
@@ -3186,7 +3186,7 @@ Sets the current sound mode for the corresponding video display. If the `audioPo
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setSoundMode",
+    "method": "com.lgi.rdk.DisplaySettings.1.setSoundMode",
     "params": {
         "audioPort": "HDMI0",
         "soundMode": "STEREO",
@@ -3235,7 +3235,7 @@ Sets the Surround Virtualizer boost. The Speaker/Surround Virtualizer enables a 
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setSurroundVirtualizer",
+    "method": "com.lgi.rdk.DisplaySettings.1.setSurroundVirtualizer",
     "params": {
         "audioPort": "SPEAKER0",
         "boost": 90
@@ -3284,7 +3284,7 @@ Sets the Surround Virtualizer boost. The Speaker/Surround Virtualizer enables a 
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setSurroundVirtualizer2",
+    "method": "com.lgi.rdk.DisplaySettings.1.setSurroundVirtualizer2",
     "params": {
         "audioPort": "SPEAKER0",
         "mode": 1,
@@ -3334,7 +3334,7 @@ Sets the specified video port status to be used in standby mode (failure if the 
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setVideoPortStatusInStandby",
+    "method": "com.lgi.rdk.DisplaySettings.1.setVideoPortStatusInStandby",
     "params": {
         "portName": "HDMI0",
         "enabled": true
@@ -3383,7 +3383,7 @@ Adjusts the Volume Level on a specific port.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setVolumeLevel",
+    "method": "com.lgi.rdk.DisplaySettings.1.setVolumeLevel",
     "params": {
         "audioPort": "SPEAKER0",
         "volumeLevel": 50
@@ -3431,7 +3431,7 @@ Sets the Volume Leveller level. Volume Leveler is an advanced volume-control sol
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setVolumeLeveller",
+    "method": "com.lgi.rdk.DisplaySettings.1.setVolumeLeveller",
     "params": {
         "audioPort": "SPEAKER0",
         "level": 9
@@ -3480,7 +3480,7 @@ Sets the Volume Leveller level. Volume Leveler is an advanced volume-control sol
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setVolumeLeveller2",
+    "method": "com.lgi.rdk.DisplaySettings.1.setVolumeLeveller2",
     "params": {
         "audioPort": "SPEAKER0",
         "mode": 1,
@@ -3528,7 +3528,7 @@ Sets the current zoom value.
 {
     "jsonrpc": "2.0",
     "id": 1234567890,
-    "method": "org.rdk.DisplaySettings.1.setZoomSetting",
+    "method": "com.lgi.rdk.DisplaySettings.1.setZoomSetting",
     "params": {
         "zoomSetting": true
     }
@@ -3552,7 +3552,7 @@ Sets the current zoom value.
 
 Notifications are autonomous events, triggered by the internals of the implementation, and broadcasted via JSON-RPC to all registered observers. Refer to [[Thunder](#ref.Thunder)] for information on how to register for a notification.
 
-The following events are provided by the org.rdk.DisplaySettings plugin:
+The following events are provided by the com.lgi.rdk.DisplaySettings plugin:
 
 DisplaySettings interface events:
 
