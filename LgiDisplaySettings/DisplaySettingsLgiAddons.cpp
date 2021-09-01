@@ -17,7 +17,7 @@
 * limitations under the License.
 **/
 
-#include "DisplaySettingsLgiAddons.h"
+#include "LgiDisplaySettings.h"
 #include <algorithm>
 #include "host.hpp"
 #include "exception.hpp"
@@ -36,6 +36,8 @@ namespace WPEFramework {
 
     namespace Plugin {
 
+        SERVICE_REGISTRATION(LgiDisplaySettings, 1, 0);
+
         static bool parseQBool(const std::string& str)
         {
             // https://doc.qt.io/qt-5/qvariant.html#toBool:
@@ -48,20 +50,20 @@ namespace WPEFramework {
             return !(lowercase_string.empty() || lowercase_string == "false" || lowercase_string == "0");
         }
 
-        DisplaySettingsLgiAddons::DisplaySettingsLgiAddons() : DisplaySettings(false)
+        LgiDisplaySettings::LgiDisplaySettings() : DisplaySettings(false)
         {
-            registerMethod("setOutputFrameRatePreference", &DisplaySettingsLgiAddons::setOutputFrameRatePreference, this);
-            registerMethod("setAudioProcessingHint", &DisplaySettingsLgiAddons::setAudioProcessingHint, this);
-            registerMethod("getAudioOutputEncoding", &DisplaySettingsLgiAddons::getAudioOutputEncoding, this);
-            registerMethod("getFollowColorSpace", &DisplaySettingsLgiAddons::getFollowColorSpace, this);
-            registerMethod("setFollowColorSpace", &DisplaySettingsLgiAddons::setFollowColorSpace, this);
-            registerMethod("getPreferredOutputColorSpace", &DisplaySettingsLgiAddons::getPreferredOutputColorSpace, this);
-            registerMethod("setPreferredOutputColorSpace", &DisplaySettingsLgiAddons::setPreferredOutputColorSpace, this);
-            registerMethod("getHDRGfxColorSpace", &DisplaySettingsLgiAddons::getHDRGfxColorSpace, this);
-            registerMethod("setHDRGfxColorSpace", &DisplaySettingsLgiAddons::setHDRGfxColorSpace, this);
+            registerMethod("setOutputFrameRatePreference", &LgiDisplaySettings::setOutputFrameRatePreference, this);
+            registerMethod("setAudioProcessingHint", &LgiDisplaySettings::setAudioProcessingHint, this);
+            registerMethod("getAudioOutputEncoding", &LgiDisplaySettings::getAudioOutputEncoding, this);
+            registerMethod("getFollowColorSpace", &LgiDisplaySettings::getFollowColorSpace, this);
+            registerMethod("setFollowColorSpace", &LgiDisplaySettings::setFollowColorSpace, this);
+            registerMethod("getPreferredOutputColorSpace", &LgiDisplaySettings::getPreferredOutputColorSpace, this);
+            registerMethod("setPreferredOutputColorSpace", &LgiDisplaySettings::setPreferredOutputColorSpace, this);
+            registerMethod("getHDRGfxColorSpace", &LgiDisplaySettings::getHDRGfxColorSpace, this);
+            registerMethod("setHDRGfxColorSpace", &LgiDisplaySettings::setHDRGfxColorSpace, this);
         }
 
-        uint32_t DisplaySettingsLgiAddons::setOutputFrameRatePreference(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::setOutputFrameRatePreference(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (const bool followContent);
             LOGINFOMETHOD();
@@ -84,7 +86,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::setAudioProcessingHint(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::setAudioProcessingHint(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (QString audioPort, QString audioMode, QString audioDelayMs);
             LOGINFOMETHOD();
@@ -117,7 +119,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::getAudioOutputEncoding(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::getAudioOutputEncoding(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (QString audioPort);
             LOGINFOMETHOD();
@@ -140,7 +142,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::getFollowColorSpace(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::getFollowColorSpace(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (QString videoDisplay) const;
             LOGINFOMETHOD();
@@ -161,7 +163,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::setFollowColorSpace(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::setFollowColorSpace(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (QString videoDisplay, bool followCOlorSpace);
             LOGINFOMETHOD();
@@ -185,7 +187,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::getPreferredOutputColorSpace(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::getPreferredOutputColorSpace(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (const QString videoDisplay);
             LOGINFOMETHOD();
@@ -217,7 +219,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::setPreferredOutputColorSpace(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::setPreferredOutputColorSpace(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (const QString videoDisplay, const QString colorSpaces);
             // here, we expect colorSpaces to be array
@@ -250,7 +252,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::getHDRGfxColorSpace(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::getHDRGfxColorSpace(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (QString videoPort, int &y, int &cr, int &cb);
             LOGINFOMETHOD();
@@ -279,7 +281,7 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
-        uint32_t DisplaySettingsLgiAddons::setHDRGfxColorSpace(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiDisplaySettings::setHDRGfxColorSpace(const JsonObject& parameters, JsonObject& response)
         {
             // servicemanager params: (QString videoPort, int y, int cr, int cb);
             LOGINFOMETHOD();

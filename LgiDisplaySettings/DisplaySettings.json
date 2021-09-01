@@ -2,8 +2,8 @@
     "$schema": "../../Thunder/Tools/JsonGenerator/schemas/interface.schema.json",
     "jsonrpc": "2.0",
     "info": {
-        "title": "DisplaySettings API", 
-        "class": "DisplaySettings", 
+        "title": "LgiDisplaySettings API", 
+        "class": "LgiDisplaySettings", 
         "description": "The `DisplaySetting` plugin provides an interface for display information such as current video resolution, supported video displays, zoom setting, sound mode, and much more."
     },
     "definitions": {

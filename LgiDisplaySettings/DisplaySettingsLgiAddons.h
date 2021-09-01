@@ -4,10 +4,10 @@
 namespace WPEFramework {
     namespace Plugin {
         // all LGI extensions are implemented here
-        class DisplaySettingsLgiAddons : public DisplaySettings
+        class LgiDisplaySettings : public DisplaySettings
         {
             public:
-                DisplaySettingsLgiAddons();
+                LgiDisplaySettings();
                 uint32_t setOutputFrameRatePreference(const JsonObject& parameters, JsonObject& response); // args: (videoDisplay, followContent)
                 uint32_t setAudioProcessingHint(const JsonObject& parameters, JsonObject& response); // args:  (audioPort, audioMode, audioDelayMs)
                 uint32_t getAudioOutputEncoding(const JsonObject& parameters, JsonObject& response); //args: (audioPort)

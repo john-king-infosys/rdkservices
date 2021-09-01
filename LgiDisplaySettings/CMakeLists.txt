@@ -15,16 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(PLUGIN_NAME DisplaySettingsLgiAddons)
+set(PLUGIN_NAME LgiDisplaySettings)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
-        DisplaySettings.cpp
-        DisplaySettingsLgiAddons.cpp
+	../DisplaySettings/DisplaySettings.cpp
+	LgiDisplaySettings.cpp
         Module.cpp
-        ServiceRegistration.cpp
 	../helpers/tptimer.cpp
         ../helpers/utils.cpp)
 
