@@ -15,15 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(PLUGIN_NAME HdcpProfile)
+set(PLUGIN_NAME LgiHdcpProfile)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
-        HdcpProfile.cpp
+        LgiHdcpProfile.cpp
+        ../HdcpProfile/HdcpProfile.cpp
         Module.cpp
         ../helpers/utils.cpp)
+
+add_definitions(-DMODULE_NAME=${PLUGIN_NAME})
 
 find_package(CURL)
 if (CURL_FOUND)
@@ -40,7 +43,7 @@ set_target_properties(${MODULE_NAME} PROPERTIES
 find_package(DS)
 find_package(IARMBus)
 
-target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS} ../helpers)
+target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS} ../helpers ../HdcpProfile)
 target_include_directories(${MODULE_NAME} PRIVATE ${DS_INCLUDE_DIRS})
 
 target_link_libraries(${MODULE_NAME} PUBLIC ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES} ${NAMESPACE}SecurityUtil)
