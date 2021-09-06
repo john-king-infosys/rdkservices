@@ -1629,16 +1629,16 @@ namespace WPEFramework {
 
                 bool success = true;
                 string audioPort = parameters.HasLabel("audioPort") ? parameters["audioPort"].String() : "HDMI0";
-                int level = 0;
+                dsVolumeLeveller_t leveller;
 
                 try
                 {
                         device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
                                 if (aPort.isConnected())
                                 {
-                                        level= aPort.getVolumeLeveller();
-                                        response["enable"] = (level ? true : false);
-                                        response["level"] = level;
+                                        leveller= aPort.getVolumeLeveller();
+                                        response["enable"] = (leveller.mode ? true : false);
+                                        response["level"] = leveller.level;
                                 }
                 }
                 catch (const device::Exception& err)
@@ -1647,6 +1647,7 @@ namespace WPEFramework {
                         success = false;
                         response["enable"] = false;
                         response["mode"] = 0;
+                        response["level"] = 0;
                 }
                 returnResponse(success);
         }
@@ -1882,16 +1883,16 @@ namespace WPEFramework {
                 LOGINFOMETHOD();
                 bool success = true;
                 string audioPort = parameters.HasLabel("audioPort") ? parameters["audioPort"].String() : "HDMI0";
-                int boost = 0;
+                dsSurroundVirtualizer_t virtualizer;
 
                 try
                 {
                        device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
                                 if (aPort.isConnected())
                                 {
-                                        boost = aPort.getSurroundVirtualizer();
-                                        response["enable"] = boost ? true : false ;
-                                        response["boost"] = boost;
+                                        virtualizer = aPort.getSurroundVirtualizer();
+                                        response["enable"] = virtualizer.mode ? true : false ;
+                                        response["boost"] = virtualizer.boost;
                                 }
                                 else
                                 {
@@ -1940,15 +1941,22 @@ namespace WPEFramework {
                 LOGINFOMETHOD();
                 returnIfParamNotFound(parameters, "level");
                 string sVolumeLeveller = parameters["level"].String();
-                int VolumeLeveller = 0;
                 bool isIntiger = Utils::isValidInt ((char*)sVolumeLeveller.c_str());
                 if (false == isIntiger) {
                     LOGWARN("level should be an integer");
                     returnResponse(false);
                 }
 
+                dsVolumeLeveller_t VolumeLeveller;
                 try {
-                        VolumeLeveller = stoi(sVolumeLeveller);
+                        VolumeLeveller.level = stoi(sVolumeLeveller);
+                        if(VolumeLeveller.level == 0) {
+                            VolumeLeveller.mode = 0; //Off
+                        }
+                        else {
+                            VolumeLeveller.mode = 1; //On
+                        }
+
                 }catch (const device::Exception& err) {
                         LOG_DEVICE_EXCEPTION1(sVolumeLeveller);
                         returnResponse(false);
@@ -2032,15 +2040,22 @@ namespace WPEFramework {
                LOGINFOMETHOD();
                returnIfParamNotFound(parameters, "boost");
                string sSurroundVirtualizer = parameters["boost"].String();
-               int surroundVirtualizer = 0;
                bool isIntiger = Utils::isValidInt ((char*)sSurroundVirtualizer.c_str());
                if (false == isIntiger) {
                    LOGWARN("boost should be an integer");
                    returnResponse(false);
                }
+               dsSurroundVirtualizer_t surroundVirtualizer;
 
                try {
-                  surroundVirtualizer = stoi(sSurroundVirtualizer);
+                  surroundVirtualizer.boost = stoi(sSurroundVirtualizer);
+                  if(surroundVirtualizer.boost == 0) {
+                      surroundVirtualizer.mode = 0; //Off
+                  }
+                  else {
+                      surroundVirtualizer.mode = 1; //On
+                  }
+
                }catch (const device::Exception& err) {
                   LOG_DEVICE_EXCEPTION1(sSurroundVirtualizer);
                               returnResponse(false);
@@ -3017,7 +3032,7 @@ namespace WPEFramework {
 				setUpHdmiCecSinkArcRouting (true);
                             }
                             else {
-                                LOGINFO("%s: No handling required\n");
+                                LOGINFO("No handling required\n");
                             }
                        }
                     }
@@ -3266,7 +3281,7 @@ namespace WPEFramework {
 
 			std::vector<int> sad_list;
 			for (int i=0; i<shortAudioDescriptorList.Length(); i++) {
-                            LOGINFO("Short Audio Descriptor[%d]: %ld \n",i, shortAudioDescriptorList[i].Number());
+                            LOGINFO("Short Audio Descriptor[%d]: %" PRIi64 "d \n",i, shortAudioDescriptorList[i].Number());
                             sad_list.push_back(shortAudioDescriptorList[i].Number());
                         }
 
