@@ -31,7 +31,7 @@ set_target_properties(${MODULE_NAME} PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED YES)
 
-target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
+target_include_directories(${MODULE_NAME} PRIVATE ../helpers ../DisplaySettings)
 
 add_compile_definitions(USE_LGI_DEVICESETTINGS_IMPLEMENTATION)
 

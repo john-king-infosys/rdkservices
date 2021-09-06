@@ -2186,13 +2186,13 @@ namespace WPEFramework {
                 LOGINFOMETHOD();
                 returnIfParamNotFound(parameters, "level");
                 string sVolumeLeveller = parameters["level"].String();
-                dsVolumeLeveller_t VolumeLeveller;
                 bool isIntiger = Utils::isValidInt ((char*)sVolumeLeveller.c_str());
                 if (false == isIntiger) {
                     LOGWARN("level should be an integer");
                     returnResponse(false);
                 }
 
+                dsVolumeLeveller_t VolumeLeveller;
                 try {
                         VolumeLeveller.level = stoi(sVolumeLeveller);
 			if(VolumeLeveller.level == 0) {
@@ -2334,12 +2334,12 @@ namespace WPEFramework {
                LOGINFOMETHOD();
                returnIfParamNotFound(parameters, "boost");
                string sSurroundVirtualizer = parameters["boost"].String();
-               dsSurroundVirtualizer_t surroundVirtualizer;
                bool isIntiger = Utils::isValidInt ((char*)sSurroundVirtualizer.c_str());
                if (false == isIntiger) {
                    LOGWARN("boost should be an integer");
                    returnResponse(false);
                }
+               dsSurroundVirtualizer_t surroundVirtualizer;
 
                try {
                   surroundVirtualizer.boost = stoi(sSurroundVirtualizer);
@@ -3424,7 +3424,7 @@ namespace WPEFramework {
                                 }
                             }
                             else {
-                                LOGINFO("%s: No handling required\n");
+                                LOGINFO("No handling required\n");
                             }
                        }
                     }
@@ -3787,7 +3787,7 @@ namespace WPEFramework {
 
 			std::vector<int> sad_list;
 			for (int i=0; i<shortAudioDescriptorList.Length(); i++) {
-                            LOGINFO("Short Audio Descriptor[%d]: %ld \n",i, shortAudioDescriptorList[i].Number());
+                            LOGINFO("Short Audio Descriptor[%d]: %" PRIi64 "d \n",i, shortAudioDescriptorList[i].Number());
                             sad_list.push_back(shortAudioDescriptorList[i].Number());
                         }
 

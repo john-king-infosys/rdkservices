@@ -38,6 +38,8 @@ namespace WPEFramework {
 
         SERVICE_REGISTRATION(LgiDisplaySettings, 1, 0);
 
+	extern void setResponseArray(JsonObject& response, const char* key, const vector<string>& items);
+
         static bool parseQBool(const std::string& str)
         {
             // https://doc.qt.io/qt-5/qvariant.html#toBool:
