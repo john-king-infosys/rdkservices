@@ -323,5 +323,36 @@ namespace WPEFramework {
             returnResponse(success);
         }
 
+        uint32_t LgiDisplaySettings::getBassEnhancer(const JsonObject& parameters, JsonObject& response)
+        {
+            LOGINFOMETHOD();
+            bool success = true;
+            string audioPort = parameters.HasLabel("audioPort") ? parameters["audioPort"].String() : "HDMI0";
+            dsSurroundVirtualizer_t virtualizer;
+            try
+            {
+                device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
+                if (aPort.isConnected())
+                {
+                    virtualizer = aPort.getSurroundVirtualizer();
+                    response["enable"] = virtualizer.mode ? true : false ;
+                    response["boost"] = virtualizer.boost;
+
+                }
+                else
+                {
+                    LOGERR("aport is not connected!");
+                    success = false;
+                }
+            }
+            catch (const device::Exception& err)
+            {
+                LOG_DEVICE_EXCEPTION1(audioPort);
+                success = false;
+                response["enable"] = false;
+            }
+            returnResponse(success);
+        }
+
     } // namespace Plugin
 } // namespace WPEFramework
