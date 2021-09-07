@@ -1350,6 +1350,8 @@ namespace WPEFramework {
             }
             else if (soundMode == "dolby digital 5.1")
                 mode = device::AudioStereoMode::kSurround;
+            else if (isFollowSoundModeSupported() && soundMode == "follow")
+                mode = device::AudioStereoMode::kFollow;
             else
             {
                 LOGWARN("Sound mode '%s' is empty or incompatible with known values, hence sound mode will not changed!", soundMode.c_str());
@@ -1555,7 +1557,7 @@ namespace WPEFramework {
 
             std::string strVideoPort = device::Host::getInstance().getDefaultVideoPortName();
             string videoDisplay = parameters.HasLabel("videoDisplay") ? parameters["videoDisplay"].String() : strVideoPort;
-            bool active = true;
+            bool active = getDefaultActiveInput();
             try
             {
                 device::VideoOutputPort &vPort = device::Host::getInstance().getVideoOutputPort(videoDisplay);

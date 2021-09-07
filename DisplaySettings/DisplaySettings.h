@@ -106,7 +106,6 @@ namespace WPEFramework {
             uint32_t getDefaultResolution(const JsonObject& parameters, JsonObject& response);
             uint32_t setScartParameter(const JsonObject& parameters, JsonObject& response);
             uint32_t getVolumeLeveller(const JsonObject& parameters, JsonObject& response);
-            uint32_t getBassEnhancer(const JsonObject& parameters, JsonObject& response);
             uint32_t isSurroundDecoderEnabled(const JsonObject& parameters, JsonObject& response);
             uint32_t getDRCMode(const JsonObject& parameters, JsonObject& response);
             uint32_t getSurroundVirtualizer(const JsonObject& parameters, JsonObject& response);
@@ -211,6 +210,18 @@ namespace WPEFramework {
         public:
             static DisplaySettings* _instance;
 
+        protected:
+            virtual bool getDefaultActiveInput() const
+            {
+                return true;
+            }
+
+            virtual bool isFollowSoundModeSupported() const
+            {
+                return false;
+            }
+
+            virtual uint32_t getBassEnhancer(const JsonObject& parameters, JsonObject& response);
         };
 	} // namespace Plugin
 } // namespace WPEFramework
