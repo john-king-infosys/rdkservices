@@ -3,6 +3,7 @@
 * file the following copyright and licenses apply:
 *
 * Copyright 2019 RDK Management
+* Copyright 2021 Liberty Global Service B.V.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 * limitations under the License.
 **/
 
-#include "HdmiCec.h"
+#include "LgiHdmiCec.h"
 
 
 #include "ccec/Connection.hpp"
@@ -66,23 +67,23 @@ namespace WPEFramework
 {
     namespace Plugin
     {
-        SERVICE_REGISTRATION(HdmiCec, 1, 0);
+        SERVICE_REGISTRATION(LgiHdmiCec, 1, 0);
 
-        HdmiCec* HdmiCec::_instance = nullptr;
+        LgiHdmiCec* LgiHdmiCec::_instance = nullptr;
 
         static int libcecInitStatus = 0;
 
-        HdmiCec::HdmiCec()
+        LgiHdmiCec::LgiHdmiCec()
         : AbstractPlugin(),smConnection(nullptr),cecEnableStatus(false)
         {
-            HdmiCec::_instance = this;
+            LgiHdmiCec::_instance = this;
 
             InitializeIARM();
 
-            registerMethod(HDMICEC_METHOD_SET_ENABLED, &HdmiCec::setEnabledWrapper, this);
-            registerMethod(HDMICEC_METHOD_GET_ENABLED, &HdmiCec::getEnabledWrapper, this);
-            registerMethod(HDMICEC_METHOD_GET_CEC_ADDRESSES, &HdmiCec::getCECAddressesWrapper, this);
-            registerMethod(HDMICEC_METHOD_SEND_MESSAGE, &HdmiCec::sendMessageWrapper, this);
+            registerMethod(HDMICEC_METHOD_SET_ENABLED, &LgiHdmiCec::setEnabledWrapper, this);
+            registerMethod(HDMICEC_METHOD_GET_ENABLED, &LgiHdmiCec::getEnabledWrapper, this);
+            registerMethod(HDMICEC_METHOD_GET_CEC_ADDRESSES, &LgiHdmiCec::getCECAddressesWrapper, this);
+            registerMethod(HDMICEC_METHOD_SEND_MESSAGE, &LgiHdmiCec::sendMessageWrapper, this);
 
             physicalAddress = 0x0F0F0F0F;
 
@@ -101,19 +102,19 @@ namespace WPEFramework
             }
         }
 
-        HdmiCec::~HdmiCec()
+        LgiHdmiCec::~LgiHdmiCec()
         {
         }
 
-        void HdmiCec::Deinitialize(PluginHost::IShell* /* service */)
+        void LgiHdmiCec::Deinitialize(PluginHost::IShell* /* service */)
         {
-            HdmiCec::_instance = nullptr;
+            LgiHdmiCec::_instance = nullptr;
 
             DeinitializeIARM();
 
         }
 
-        const void HdmiCec::InitializeIARM()
+        const void LgiHdmiCec::InitializeIARM()
         {
             if (Utils::IARM::init())
             {
@@ -125,7 +126,7 @@ namespace WPEFramework
             }
         }
 
-        void HdmiCec::DeinitializeIARM()
+        void LgiHdmiCec::DeinitializeIARM()
         {
             if (Utils::IARM::isConnected())
             {
@@ -137,9 +138,9 @@ namespace WPEFramework
             }
         }
 
-        void HdmiCec::cecMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
+        void LgiHdmiCec::cecMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
         {
-            if(!HdmiCec::_instance)
+            if(!LgiHdmiCec::_instance)
                 return;
 
             if( !strcmp(owner, IARM_BUS_CECMGR_NAME))
@@ -148,7 +149,7 @@ namespace WPEFramework
                 {
                     case IARM_BUS_CECMGR_EVENT_DAEMON_INITIALIZED:
                     {
-                        HdmiCec::_instance->onCECDaemonInit();
+                        LgiHdmiCec::_instance->onCECDaemonInit();
                     }
                     break;
                     case IARM_BUS_CECMGR_EVENT_STATUS_UPDATED:
@@ -157,7 +158,7 @@ namespace WPEFramework
                         if(evtData)
                         {
                             memcpy(evtData,data,sizeof(IARM_Bus_CECMgr_Status_Updated_Param_t));
-                            HdmiCec::_instance->cecStatusUpdated(evtData);
+                            LgiHdmiCec::_instance->cecStatusUpdated(evtData);
                         }
                     }
                     break;
@@ -168,9 +169,9 @@ namespace WPEFramework
             }
         }
 
-        void HdmiCec::dsHdmiEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
+        void LgiHdmiCec::dsHdmiEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
         {
-            if(!HdmiCec::_instance)
+            if(!LgiHdmiCec::_instance)
                 return;
 
             if (IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG == eventId)
@@ -179,11 +180,11 @@ namespace WPEFramework
                 int hdmi_hotplug_event = eventData->data.hdmi_hpd.event;
                 LOGINFO("Received IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG  event data:%d \r\n", hdmi_hotplug_event);
 
-                HdmiCec::_instance->onHdmiHotPlug(hdmi_hotplug_event);
+                LgiHdmiCec::_instance->onHdmiHotPlug(hdmi_hotplug_event);
             }
         }
 
-        void HdmiCec::onCECDaemonInit()
+        void LgiHdmiCec::onCECDaemonInit()
         {
             if(true == getEnabled())
             {
@@ -196,7 +197,7 @@ namespace WPEFramework
             }
         }
 
-        void HdmiCec::cecStatusUpdated(void *evtStatus)
+        void LgiHdmiCec::cecStatusUpdated(void *evtStatus)
         {
             IARM_Bus_CECMgr_Status_Updated_Param_t *evtData = (IARM_Bus_CECMgr_Status_Updated_Param_t *)evtStatus;
             if(evtData)
@@ -225,7 +226,7 @@ namespace WPEFramework
            return;
         }
 
-        void HdmiCec::onHdmiHotPlug(int connectStatus)
+        void LgiHdmiCec::onHdmiHotPlug(int connectStatus)
         {
             if (HDMI_HOT_PLUG_EVENT_CONNECTED == connectStatus)
             {
@@ -236,7 +237,7 @@ namespace WPEFramework
             return;
         }
 
-        uint32_t HdmiCec::setEnabledWrapper(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiHdmiCec::setEnabledWrapper(const JsonObject& parameters, JsonObject& response)
         {
             LOGINFOMETHOD();
 
@@ -255,7 +256,7 @@ namespace WPEFramework
             returnResponse(true);
         }
 
-        uint32_t HdmiCec::getEnabledWrapper(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiHdmiCec::getEnabledWrapper(const JsonObject& parameters, JsonObject& response)
         {
             LOGINFOMETHOD();
 
@@ -263,7 +264,7 @@ namespace WPEFramework
             returnResponse(true);
         }
 
-        uint32_t HdmiCec::getCECAddressesWrapper(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiHdmiCec::getCECAddressesWrapper(const JsonObject& parameters, JsonObject& response)
         {
             LOGINFOMETHOD();
 
@@ -272,7 +273,7 @@ namespace WPEFramework
             returnResponse(true);
         }
 
-        uint32_t HdmiCec::sendMessageWrapper(const JsonObject& parameters, JsonObject& response)
+        uint32_t LgiHdmiCec::sendMessageWrapper(const JsonObject& parameters, JsonObject& response)
         {
             LOGINFOMETHOD();
 
@@ -291,7 +292,7 @@ namespace WPEFramework
             returnResponse(true);
         }
 
-        bool HdmiCec::loadSettings()
+        bool LgiHdmiCec::loadSettings()
         {
             Core::File file;
             file = CEC_SETTING_ENABLED_FILE;
@@ -307,7 +308,7 @@ namespace WPEFramework
             return cecSettingEnabled;
         }
 
-        void HdmiCec::setEnabled(bool enabled)
+        void LgiHdmiCec::setEnabled(bool enabled)
         {
            LOGWARN("Entered setEnabled ");
 
@@ -326,7 +327,7 @@ namespace WPEFramework
            return;
         }
 
-        void HdmiCec::CECEnable(void)
+        void LgiHdmiCec::CECEnable(void)
         {
             LOGWARN("Entered CECEnable");
             if (cecEnableStatus)
@@ -360,7 +361,7 @@ namespace WPEFramework
             return;
         }
 
-        void HdmiCec::CECDisable(void)
+        void LgiHdmiCec::CECDisable(void)
         {
             LOGWARN("Entered CECDisable ");
 
@@ -392,7 +393,7 @@ namespace WPEFramework
         }
 
 
-        void HdmiCec::getPhysicalAddress()
+        void LgiHdmiCec::getPhysicalAddress()
         {
             LOGINFO("Entered getPhysicalAddress ");
 
@@ -415,7 +416,7 @@ namespace WPEFramework
             return;
         }
 
-        void HdmiCec::getLogicalAddress()
+        void LgiHdmiCec::getLogicalAddress()
         {
             LOGINFO("Entered getLogicalAddress ");
 
@@ -442,7 +443,7 @@ namespace WPEFramework
             return;
         }
 
-        bool HdmiCec::getEnabled()
+        bool LgiHdmiCec::getEnabled()
         {
             LOGWARN("Entered getEnabled ");
             if(true == cecEnableStatus)
@@ -451,13 +452,13 @@ namespace WPEFramework
                 return false;
         }
 
-        void HdmiCec::setName(std::string name)
+        void LgiHdmiCec::setName(std::string name)
         {
             //SVCLOG_WARN("%s \r\n",__FUNCTION__);
             return;
         }
 
-        std::string HdmiCec::getName()
+        std::string LgiHdmiCec::getName()
         {
             //SVCLOG_WARN("%s \r\n",__FUNCTION__);
             IARM_Result_t ret = IARM_RESULT_INVALID_STATE;
@@ -470,7 +471,7 @@ namespace WPEFramework
             return "STB";
         }
 
-        JsonObject HdmiCec::getCECAddresses()
+        JsonObject LgiHdmiCec::getCECAddresses()
         {
             JsonObject CECAddress;
             LOGINFO("Entered getCECAddresses ");
@@ -492,7 +493,7 @@ namespace WPEFramework
         }
 
         // Copy of Core::FromString, which doesn't add extra zero at the end
-        uint16_t HdmiCec::FromBase64String(const string& newValue, uint8_t object[], uint16_t& length, const TCHAR* ignoreList)
+        uint16_t LgiHdmiCec::FromBase64String(const string& newValue, uint8_t object[], uint16_t& length, const TCHAR* ignoreList)
         {
             uint8_t state = 0;
             uint16_t index = 0;
@@ -547,7 +548,7 @@ namespace WPEFramework
             return (index);
         }
 
-        void HdmiCec::sendMessage(std::string message)
+        void LgiHdmiCec::sendMessage(std::string message)
         {
             LOGINFO("sendMessage ");
 
@@ -569,7 +570,7 @@ namespace WPEFramework
             return;
         }
 
-        void HdmiCec::cecAddressesChanged(int changeStatus)
+        void LgiHdmiCec::cecAddressesChanged(int changeStatus)
         {
             JsonObject params;
             JsonObject CECAddresses;
@@ -599,7 +600,7 @@ namespace WPEFramework
             return;
         }
 
-        void HdmiCec::notify(const CECFrame &in) const
+        void LgiHdmiCec::notify(const CECFrame &in) const
         {
             LOGINFO("Inside notify ");
             size_t length;
@@ -615,11 +616,11 @@ namespace WPEFramework
             uint16_t encodedLen = Core::URL::Base64Encode(input_frameBuf, length, buf.data(), buf.size());
             buf[encodedLen] = 0;
 
-            (const_cast<HdmiCec*>(this))->onMessage(buf.data());
+            (const_cast<LgiHdmiCec*>(this))->onMessage(buf.data());
             return;
         }
 
-        void HdmiCec::onMessage( const char *message )
+        void LgiHdmiCec::onMessage( const char *message )
         {
             JsonObject params;
             params["message"] = message;

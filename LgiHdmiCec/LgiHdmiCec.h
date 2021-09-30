@@ -3,6 +3,7 @@
 * file the following copyright and licenses apply:
 *
 * Copyright 2019 RDK Management
+* Copyright 2021 Liberty Global Service B.V.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -47,12 +48,12 @@ namespace WPEFramework {
 		// As the registration/unregistration of notifications is realized by the class PluginHost::JSONRPC,
 		// this class exposes a public method called, Notify(), using this methods, all subscribed clients
 		// will receive a JSONRPC message as a notification, in case this method is called.
-        class HdmiCec : public AbstractPlugin, public FrameListener {
+        class LgiHdmiCec : public AbstractPlugin, public FrameListener {
         private:
 
             // We do not allow this plugin to be copied !!
-            HdmiCec(const HdmiCec&) = delete;
-            HdmiCec& operator=(const HdmiCec&) = delete;
+            LgiHdmiCec(const LgiHdmiCec&) = delete;
+            LgiHdmiCec& operator=(const LgiHdmiCec&) = delete;
 
             //Begin methods
             uint32_t setEnabledWrapper(const JsonObject& parameters, JsonObject& response);
@@ -63,12 +64,12 @@ namespace WPEFramework {
 
 
         public:
-            HdmiCec();
-            virtual ~HdmiCec();
+            LgiHdmiCec();
+            virtual ~LgiHdmiCec();
             virtual void Deinitialize(PluginHost::IShell* service) override;
 
         public:
-            static HdmiCec* _instance;
+            static LgiHdmiCec* _instance;
         private:
             std::string logicalAddressDeviceType;
             unsigned int logicalAddress;

@@ -2,6 +2,7 @@
 # following copyright and licenses apply:
 #
 # Copyright 2020 RDK Management
+# Copyright 2021 Liberty Global Service B.V.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(PLUGIN_NAME HdmiCec)
+set(PLUGIN_NAME LgiHdmiCec)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
-        HdmiCec.cpp
+	LgiHdmiCec.cpp
         Module.cpp
         ../helpers/utils.cpp)
 

@@ -2,9 +2,9 @@
     "$schema": "https://raw.githubusercontent.com/rdkcentral/Thunder/master/Tools/JsonGenerator/schemas/interface.schema.json",
     "jsonrpc": "2.0",
     "info": {
-        "title": "HdmiCec API", 
-        "class": "HdmiCec", 
-        "description": "The `HdmiCec` plugin allows you to configure HDMI Consumer Electronics Control (CEC) on a set-top box"
+        "title": "LgiHdmiCec API", 
+        "class": "LgiHdmiCec", 
+        "description": "The `LgiHdmiCec` plugin allows you to configure HDMI Consumer Electronics Control (CEC) on a set-top box"
     },
     "definitions": {
         "enabled": {
