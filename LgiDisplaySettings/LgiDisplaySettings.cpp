@@ -52,7 +52,7 @@ namespace WPEFramework {
             return !(lowercase_string.empty() || lowercase_string == "false" || lowercase_string == "0");
         }
 
-        LgiDisplaySettings::LgiDisplaySettings() : DisplaySettings(false)
+        LgiDisplaySettings::LgiDisplaySettings() : DisplaySettings()
         {
             registerMethod("setOutputFrameRatePreference", &LgiDisplaySettings::setOutputFrameRatePreference, this);
             registerMethod("setAudioProcessingHint", &LgiDisplaySettings::setAudioProcessingHint, this);
