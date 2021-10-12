@@ -21,10 +21,10 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 find_package(${NAMESPACE}Plugins REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
-	../DisplaySettings/DisplaySettings.cpp
-	LgiDisplaySettings.cpp
+        ../DisplaySettings/DisplaySettings.cpp
+        LgiDisplaySettings.cpp
         Module.cpp
-	../helpers/tptimer.cpp
+        ../helpers/tptimer.cpp
         ../helpers/utils.cpp)
 
 set_target_properties(${MODULE_NAME} PROPERTIES
