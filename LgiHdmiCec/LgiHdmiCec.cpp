@@ -167,6 +167,7 @@ namespace WPEFramework
 
         void LgiHdmiCec::Deinitialize(PluginHost::IShell* /* service */)
         {
+            CECDisable();
             LgiHdmiCec::_instance = nullptr;
 
             DeinitializeIARM();
