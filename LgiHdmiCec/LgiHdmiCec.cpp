@@ -937,7 +937,11 @@ namespace WPEFramework
             Frame.getBuffer(&input_frameBuf,&length);
 
             std::vector <char> buf;
-            buf.resize(length * 2);
+            // base64 encoded string uses 4 characters for every 3 bytes (using padding if necessary) - so assume padding is used
+            // Base64Encode doesn't seem to use base64 padding right now, but better to be future-proof
+            size_t required_buffer_size = 4 * (length / 3);
+            if (length % 3 != 0) required_buffer_size += 4;
+            buf.resize(required_buffer_size + 1); // +1 for null terminator
 
             uint16_t encodedLen = Core::URL::Base64Encode(input_frameBuf, length, buf.data(), buf.size());
             buf[encodedLen] = 0;
