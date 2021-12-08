@@ -20,15 +20,11 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
 find_package(${NAMESPACE}Definitions REQUIRED)
 find_package(${NAMESPACE}Plugins REQUIRED)
-find_package(${NAMESPACE}SecurityUtil REQUIRED)
 find_package(CompileSettingsDebug CONFIG REQUIRED)
-
-find_package(IARMBus REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
     Module.cpp
     FireboltMediaPlayer.cpp
-    ../helpers/utils.cpp
 )
 
 set(MEDIAPLAYERS "AampMediaPlayer")
@@ -56,8 +52,6 @@ target_link_libraries(${MODULE_NAME}
         CompileSettingsDebug::CompileSettingsDebug
         ${NAMESPACE}Plugins::${NAMESPACE}Plugins
         ${NAMESPACE}Definitions::${NAMESPACE}Definitions
-        ${NAMESPACE}SecurityUtil::${NAMESPACE}SecurityUtil
-	${IARMBUS_LIBRARIES}
         -Wl,--whole-archive ${MEDIAPLAYERS_LIBS} -Wl,--no-whole-archive)
 
 install(TARGETS ${MODULE_NAME}
