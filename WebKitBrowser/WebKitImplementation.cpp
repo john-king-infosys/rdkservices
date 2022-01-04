@@ -590,6 +590,7 @@ static GSourceFuncs _handlerIntervention =
                 Add(_T("watchdoghangthresholdtinseconds"), &WatchDogHangThresholdInSeconds);
                 Add(_T("loadblankpageonsuspendenabled"), &LoadBlankPageOnSuspendEnabled);
                 Add(_T("securityprofiles"), &SecurityProfiles);
+                Add(_T("httpcookieacceptpolicy"), &HTTPCookieAcceptPolicy);
             }
             ~Config()
             {
@@ -651,6 +652,7 @@ static GSourceFuncs _handlerIntervention =
             Core::JSON::DecUInt16 WatchDogHangThresholdInSeconds;  // The amount of time to give a process to recover before declaring a hang state
             Core::JSON::Boolean LoadBlankPageOnSuspendEnabled;
             Core::JSON::ArrayType<SecurityProfileProperty> SecurityProfiles;
+            Core::JSON::String HTTPCookieAcceptPolicy;
         };
 
 #ifndef WEBKIT_GLIB_API
@@ -2262,6 +2264,19 @@ static GSourceFuncs _handlerIntervention =
 
             if (height.empty() == false) {
                 Core::SystemInfo::SetEnvironment(_T("GST_VIRTUAL_DISP_HEIGHT"), height, !environmentOverride);
+            }
+
+            if (_config.HTTPCookieAcceptPolicy.Value().empty() == false) {
+                TRACE(Trace::Information, (_T("HTTPCookieAcceptPolicy: %s"), _config.HTTPCookieAcceptPolicy.Value().c_str()));
+                const auto value = _config.HTTPCookieAcceptPolicy.Value();
+                if (value == "ALWAYS")
+                    _httpCookieAcceptPolicy = kWKHTTPCookieAcceptPolicyAlways;
+                else if (value == "NEVER")
+                    _httpCookieAcceptPolicy = kWKHTTPCookieAcceptPolicyNever;
+                else if (value == "ONLY_FROM_MAIN_DOCUMENT_DOMAIN")
+                    _httpCookieAcceptPolicy = kWKHTTPCookieAcceptPolicyOnlyFromMainDocumentDomain;
+                else if (value == "EXCLUSIVELY_FROM_MAIN_DOCUMENT_DOMAIN")
+                    _httpCookieAcceptPolicy = kWKHTTPCookieAcceptPolicyExclusivelyFromMainDocumentDomain;
             }
 
             // Oke, so we are good to go.. Release....
