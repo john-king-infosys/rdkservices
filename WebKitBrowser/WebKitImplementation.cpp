@@ -840,11 +840,11 @@ static GSourceFuncs _handlerIntervention =
                 TRACE(Trace::Error, (_T("Failed to initialize ODH reporting")));
 
             implementation = this;
-            TRACE_L1("%p", this);
+            TRACE_FORMATTING("%p", this);
         }
         ~WebKitImplementation() override
         {
-            TRACE_L1("%p", this);
+            TRACE_FORMATTING("%p", this);
             Block();
 
             odh_error_report_deinit(ODH_ERROR_REPORT_DEINIT_MODE_DEFERRED);
@@ -908,7 +908,7 @@ static GSourceFuncs _handlerIntervention =
                         userScriptsUris.push_back(entry);
                         userScriptsContent.push_back(content);
                 }
-                TRACE_L1("Adding user's script (uri: %s, empty: %d)", entry.c_str(), content.empty());
+                TRACE_FORMATTING("Adding user's script (uri: %s, empty: %d)", entry.c_str(), content.empty());
             }
             using SetUserScriptsData = std::tuple<WebKitImplementation*, std::list<string>, std::vector<string>>;
             auto* data = new SetUserScriptsData(this, userScriptsUris, userScriptsContent);
@@ -968,7 +968,7 @@ static GSourceFuncs _handlerIntervention =
                         userStyleSheetsUris.push_back(entry);
                         userStyleSheetsContent.push_back(content);
                 }
-                TRACE_L1("Adding user's style sheet (uri: %s, empty: %d)", entry.c_str(), content.empty());
+                TRACE_FORMATTING("Adding user's style sheet (uri: %s, empty: %d)", entry.c_str(), content.empty());
             }
             using SetUserStyleSheetsData = std::tuple<WebKitImplementation*, std::list<string>, std::vector<string>>;
             auto* data = new SetUserStyleSheetsData(this, userStyleSheetsUris, userStyleSheetsContent);
@@ -1071,7 +1071,7 @@ static GSourceFuncs _handlerIntervention =
             using SetUserAgentData = std::tuple<WebKitImplementation*, string>;
             auto* data = new SetUserAgentData(this, useragent);
 
-            TRACE_L1("New user agent: %s", useragent.c_str());
+            TRACE_FORMATTING("New user agent: %s", useragent.c_str());
 
             g_main_context_invoke_full(
                 _context,
@@ -1324,7 +1324,7 @@ static GSourceFuncs _handlerIntervention =
             }
 
             const Config::SecurityProfileProperty securityProfile(spe.Current());
-            TRACE_L1(
+            TRACE_FORMATTING(
                 "Setting security profile to %s: %s",
                 securityProfile.Name.Value().c_str(), securityProfile.CipherPrio.Value().c_str());
 
@@ -1414,7 +1414,7 @@ static GSourceFuncs _handlerIntervention =
         {
             using namespace std::chrono;
 
-            TRACE_L1("New URL: %s", URL.c_str());
+            TRACE_FORMATTING("New URL: %s", URL.c_str());
             ODH_WARNING("New URL: %s", URL.c_str());
 
             if (!_context) return Core::ERROR_ILLEGAL_STATE;
@@ -1449,7 +1449,7 @@ static GSourceFuncs _handlerIntervention =
                     auto shellURL = WKURLCreateWithUTF8CString(url.c_str());
                     WKPageLoadURL(page, shellURL);
                     WKRelease(shellURL);
-                    TRACE_L1("URL %s, load requested", url.c_str());
+                    TRACE_FORMATTING("URL %s, load requested", url.c_str());
 #endif
                     return G_SOURCE_REMOVE;
                 },
@@ -1466,7 +1466,7 @@ static GSourceFuncs _handlerIntervention =
 
             const auto diff = steady_clock::now() - now;
 
-            TRACE_L1(
+            TRACE_FORMATTING(
                     "URL: %s, load result %s(%d), %dms",
                     urlData_.url.c_str(),
                     Core::ERROR_NONE == urlData_.result ? "OK" : "NOK",
@@ -1819,7 +1819,7 @@ static GSourceFuncs _handlerIntervention =
 
         void OnURLChanged(const string& url, bool navigationStart)
         {
-            TRACE_L1("%s", url.c_str());
+            TRACE_FORMATTING("%s", url.c_str());
 
             urlValue(url);
 
@@ -1862,7 +1862,7 @@ static GSourceFuncs _handlerIntervention =
         {
             const auto currNavRef = NavigationRef();
 
-            TRACE_L1("%s (%p|%p)", url.c_str(), currNavRef, navigation);
+            TRACE_FORMATTING("%s (%p|%p)", url.c_str(), currNavRef, navigation);
 
             if (currNavRef != navigation) {
                 TRACE(Trace::Information, (_T("Ignore 'loadfinished' for previous navigation request")));
@@ -1903,7 +1903,7 @@ static GSourceFuncs _handlerIntervention =
         {
             const auto url = urlValue();
 
-            TRACE_L1("%s (%p)", url.c_str(), NavigationRef());
+            TRACE_FORMATTING("%s (%p)", url.c_str(), NavigationRef());
 
             {
                 std::unique_lock<std::mutex> lock{urlData_.mutex};
