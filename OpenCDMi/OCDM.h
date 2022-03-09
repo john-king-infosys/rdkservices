@@ -24,7 +24,7 @@
 #include <interfaces/IContentDecryption.h>
 #include <interfaces/IMemory.h>
 #include <interfaces/json/JsonData_OCDM.h>
-#include "utils.h"
+//#include "utils.h"
 
 namespace WPEFramework {
 namespace Plugin {
@@ -34,8 +34,8 @@ namespace Plugin {
         OCDM(const OCDM&) = delete;
         OCDM& operator=(const OCDM&) = delete;
 
-        class Notification : public RPC::IRemoteConnection::INotification,
-                             public Exchange::IContentDecryption::INotification {
+        class Notification : public RPC::IRemoteConnection::INotification {
+//                             public Exchange::IContentDecryption::INotification {
 
         private:
             Notification() = delete;
@@ -60,15 +60,15 @@ namespace Plugin {
             {
                 _parent.Deactivated(connection);
             }
-            void initializationStatus(const std::string& keySystem,
+            /*void initializationStatus(const std::string& keySystem,
                                       Exchange::IContentDecryption::Status status) override
             {
                 _parent.OnEvent(keySystem, static_cast<JsonData::OCDM::DrminitializationstatusParamsData::StatusType>(status));
-            }
+            } */
 
             BEGIN_INTERFACE_MAP(Notification)
             INTERFACE_ENTRY(RPC::IRemoteConnection::INotification)
-            INTERFACE_ENTRY(Exchange::IContentDecryption::INotification)
+            //INTERFACE_ENTRY(Exchange::IContentDecryption::INotification)
             END_INTERFACE_MAP
 
         private:
@@ -167,7 +167,7 @@ namespace Plugin {
             UnregisterAll();
         }
 
-        void OnEvent(const std::string& keySystem,
+/*        void OnEvent(const std::string& keySystem,
                      const JsonData::OCDM::DrminitializationstatusParamsData::StatusType status)
         {
             if (status == JsonData::OCDM::DrminitializationstatusParamsData::StatusType::BUSY)
@@ -181,7 +181,7 @@ namespace Plugin {
             data.Status = status;
             data.Drm = keySystem;
             sendNotify(_T("drminitializationstatus"), data);
-        }
+        } */
 
     public:
         BEGIN_INTERFACE_MAP(OCDM)
@@ -229,7 +229,7 @@ namespace Plugin {
         void UnregisterAll();
         uint32_t get_drms(Core::JSON::ArrayType<JsonData::OCDM::DrmData>& response) const;
         uint32_t get_keysystems(const string& index, Core::JSON::ArrayType<Core::JSON::String>& response) const;
-        uint32_t get_sessions(Core::JSON::ArrayType<JsonData::OCDM::SessionInfo>& response) const;
+        //uint32_t get_sessions(Core::JSON::ArrayType<JsonData::OCDM::SessionInfo>& response) const;
 
     private:
         uint8_t _skipURL;

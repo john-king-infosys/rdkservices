@@ -21,7 +21,7 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 find_package(ocdm REQUIRED)
 find_package(${NAMESPACE}Plugins REQUIRED)
 find_package(CompileSettingsDebug CONFIG REQUIRED)
-find_package(${NAMESPACE}Definitions REQUIRED)
+#find_package(${NAMESPACE}Definitions REQUIRED)
 
 add_library(${MODULE_NAME} SHARED 
         OCDM.cpp
@@ -47,18 +47,18 @@ set_target_properties(${MODULE_NAME}Service PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED YES)
 
-target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
-target_include_directories(${MODULE_NAME}Service PRIVATE ../helpers)
+# target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
+# target_include_directories(${MODULE_NAME}Service PRIVATE ../helpers)
 target_link_libraries(${MODULE_NAME} 
         PRIVATE
                 CompileSettingsDebug::CompileSettingsDebug
-                ${NAMESPACE}Plugins::${NAMESPACE}Plugins 
-                ${NAMESPACE}Definitions::${NAMESPACE}Definitions)
+                ${NAMESPACE}Plugins::${NAMESPACE}Plugins) 
+#                ${NAMESPACE}Definitions::${NAMESPACE}Definitions)
 target_link_libraries(${MODULE_NAME}Service
         PRIVATE
                 CompileSettingsDebug::CompileSettingsDebug
                 ${NAMESPACE}Plugins::${NAMESPACE}Plugins
-                ${NAMESPACE}Definitions::${NAMESPACE}Definitions
+#                ${NAMESPACE}Definitions::${NAMESPACE}Definitions
                 ocdm::ocdm)
 # Library definition section
 install(TARGETS ${MODULE_NAME} 

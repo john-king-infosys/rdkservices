@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <mutex>
+//#include <mutex>
 
 #include "Module.h"
 #include "CENCParser.h"
@@ -31,10 +31,10 @@
 #include <interfaces/IDRM.h>
 #include <interfaces/IContentDecryption.h>
 
-#define INITIALIZATION_RETRY_SLEEP_MS         100         // delay in [ms] after getting CDMi_BUSY_CANNOT_INITIALIZE and retry
-#define INITIALIZATION_MAX_RETRY_COUNTER      50          // number of repetitions in retrying procedure
+//#define INITIALIZATION_RETRY_SLEEP_MS         100         // delay in [ms] after getting CDMi_BUSY_CANNOT_INITIALIZE and retry
+//#define INITIALIZATION_MAX_RETRY_COUNTER      50          // number of repetitions in retrying procedure
 
-#include "ReportErrors.h"
+//#include "ReportErrors.h"
 
 extern "C" {
 
@@ -747,7 +747,7 @@ namespace Plugin {
                  CDMi::IMediaKeys *system = _parent.KeySystem(keySystem);
 
                  session = nullptr;
-                 bool hadInitializationError = false;
+//                 bool hadInitializationError = false;
                  if (system != nullptr)
                  {
                      CDMi::IMediaKeySession *sessionInterface = nullptr;
@@ -755,19 +755,19 @@ namespace Plugin {
 
                      // OKe we got a buffer machanism to transfer the raw data, now create
                      // the session.
-                     for (int i = 0; i < INITIALIZATION_MAX_RETRY_COUNTER; i++)
-                     {
+//                     for (int i = 0; i < INITIALIZATION_MAX_RETRY_COUNTER; i++)
+//                     {
                         CDMi::CDMi_RESULT result =  system->CreateMediaKeySession(keySystem, licenseType, 
                                                     initDataType.c_str(), initData, initDataLength, 
                                                     CDMData, CDMDataLength, &sessionInterface);
                         if (result == 0)
                         {
-                            if (hadInitializationError)
-                            {
-                                TRACE(Trace::Warning, (_T("DRM initialization: success after re-trying, send SUCCESS notification")));
-                                _parent.initializationStatusNotify(keySystem, Exchange::IContentDecryption::Status::SUCCESS);
-                                ODH_ERROR_REPORT_CTX_ERROR(0, "DRM initialization: success after retrying", i);
-                            }
+//                            if (hadInitializationError)
+//                            {
+//                                TRACE(Trace::Warning, (_T("DRM initialization: success after re-trying, send SUCCESS notification")));
+//                                _parent.initializationStatusNotify(keySystem, Exchange::IContentDecryption::Status::SUCCESS);
+//                                ODH_ERROR_REPORT_CTX_ERROR(0, "DRM initialization: success after retrying", i);
+//                            }
                             if (sessionInterface != nullptr)
                             {
                                 SessionImplementation *newEntry = 
@@ -792,9 +792,9 @@ namespace Plugin {
                                 }
                                 _adminLock.Unlock();
                             }
-                            break;
+                            //break;
                         }
-                        else
+/*                        else
                         {
                             TRACE(Trace::Error, (_T("DRM initialization: failed, result=%08x counter=%d"), result, i));
                             if (result == CDMi::CDMi_RESULT::CDMi_BUSY_CANNOT_INITIALIZE)
@@ -811,18 +811,18 @@ namespace Plugin {
                             {
                                 break;
                             }
-                        }
-                    }
+                        } */
+                    //}
                  }
 
                  if (session == nullptr) {
                      TRACE(Trace::Error, (_T("Could not create a DRM session! [%d]"), __LINE__));
-                     if (hadInitializationError)
-                     {
-                        TRACE(Trace::Error, (_T("DRM initialization: failed, send FAILED notification")));
-                        _parent.initializationStatusNotify(keySystem, Exchange::IContentDecryption::Status::FAILED);
-                        ODH_ERROR_REPORT_CTX_ERROR(0, "DRM initialization: failed after retrying", INITIALIZATION_MAX_RETRY_COUNTER);
-                     }
+//                     if (hadInitializationError)
+//                     {
+//                        TRACE(Trace::Error, (_T("DRM initialization: failed, send FAILED notification")));
+//                        _parent.initializationStatusNotify(keySystem, Exchange::IContentDecryption::Status::FAILED);
+//                        ODH_ERROR_REPORT_CTX_ERROR(0, "DRM initialization: failed after retrying", INITIALIZATION_MAX_RETRY_COUNTER);
+//                     }
                  }
 
                  return (session != nullptr ? ::OCDM::OCDM_RESULT::OCDM_SUCCESS : ::OCDM::OCDM_RESULT::OCDM_S_FALSE);
@@ -1318,7 +1318,7 @@ namespace Plugin {
             return (Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(sessions));
         }
 
-        uint32_t Register(IContentDecryption::INotification* notification) override
+/*        uint32_t Register(IContentDecryption::INotification* notification) override
         {
             LockGuard lock(notificationMutex);
             ASSERT(std::find(_notificationCallbacks.begin(), _notificationCallbacks.end(), notification) == _notificationCallbacks.end());
@@ -1338,7 +1338,7 @@ namespace Plugin {
             }
             return (Core::ERROR_NONE);
         }
-
+*/
     public:
         bool IsTypeSupported(const std::string& keySystem, const std::string& contentType)
         {
@@ -1420,7 +1420,7 @@ namespace Plugin {
             return (result);
         }
 
-        void initializationStatusNotify(const string& designator, const Exchange::IContentDecryption::Status status)
+/*       void initializationStatusNotify(const string& designator, const Exchange::IContentDecryption::Status status)
         {
             string keySystem;
             // translate "designator" (com.microsoft.playready, ...) into "keySystem" (PlayReady/Widevine)
@@ -1436,7 +1436,7 @@ namespace Plugin {
             for(const auto callback: _notificationCallbacks) {
                 callback->initializationStatus(keySystem, status);
             }
-        }
+        }*/
 
     private:
         void LoadDesignators(const string& keySystem, std::list<string>& designators) const
@@ -1501,9 +1501,9 @@ namespace Plugin {
         Blacklist _systemBlacklistedMediaTypeRegexps;
         std::list<Core::Library> _systemLibraries;
         std::list<string> _keySystems;
-        using LockGuard = std::lock_guard<std::mutex>;
-        std::list<Exchange::IContentDecryption::INotification *> _notificationCallbacks{};
-        std::mutex notificationMutex{};
+//        using LockGuard = std::lock_guard<std::mutex>;
+//        std::list<Exchange::IContentDecryption::INotification *> _notificationCallbacks{};
+//        std::mutex notificationMutex{};
     };
 
     SERVICE_REGISTRATION(OCDMImplementation, 1, 0);
