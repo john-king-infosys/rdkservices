@@ -49,7 +49,7 @@ namespace WPEFramework
         HdcpProfile* HdcpProfile::_instance = nullptr;
 
         HdcpProfile::HdcpProfile()
-        : AbstractPlugin()
+        : AbstractPluginWithApiAndIARMLock()
         {
             HdcpProfile::_instance = this;
 
@@ -76,8 +76,8 @@ namespace WPEFramework
             Utils::IARM::init();
 
             IARM_Result_t res;
-            IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG, dsHdmiEventHandler) );
-            IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDCP_STATUS, dsHdmiEventHandler) );
+            IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG, locked_iarm_handler<dsHdmiEventHandler>) );
+            IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDCP_STATUS, locked_iarm_handler<dsHdmiEventHandler>) );
         }
 
         void HdcpProfile::DeinitializeIARM()

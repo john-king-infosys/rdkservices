@@ -23,7 +23,7 @@
 
 #include "Module.h"
 #include "utils.h"
-#include "AbstractPlugin.h"
+#include "AbstractPluginWithApiAndIARMLock.h"
 
 namespace WPEFramework {
 
@@ -41,7 +41,7 @@ namespace WPEFramework {
 		// As the registration/unregistration of notifications is realized by the class PluginHost::JSONRPC,
 		// this class exposes a public method called, Notify(), using this methods, all subscribed clients
 		// will receive a JSONRPC message as a notification, in case this method is called.
-        class HdcpProfile : public AbstractPlugin {
+        class HdcpProfile : public AbstractPluginWithApiAndIARMLock<HdcpProfile> {
         private:
 
             // We do not allow this plugin to be copied !!
@@ -63,6 +63,8 @@ namespace WPEFramework {
             void logHdcpStatus (const char *trigger, const JsonObject& status);
             static void dsHdmiEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len);
 
+            std::mutex m_apiLock;
+
         public:
             HdcpProfile();
             virtual ~HdcpProfile();
@@ -71,6 +73,10 @@ namespace WPEFramework {
             void terminate();
 
             static HdcpProfile* _instance;
+
+            static std::mutex& getApiLock() {
+                return _instance->m_apiLock;
+            }
         };
 	} // namespace Plugin
 } // namespace WPEFramework

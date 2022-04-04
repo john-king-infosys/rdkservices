@@ -81,7 +81,7 @@ string strDyAppConfig = "";
 
 IARM_Bus_PWRMgr_PowerState_t XCast::m_powerState = IARM_BUS_PWRMGR_POWERSTATE_STANDBY;
 
-XCast::XCast() : AbstractPlugin()
+XCast::XCast() : AbstractPluginWithApiAndIARMLock()
 , m_apiVersionNumber(1)
 {
     InitializeIARM();
@@ -111,7 +111,7 @@ const void XCast::InitializeIARM()
      if (Utils::IARM::init())
      {
          IARM_Result_t res;
-         IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_PWRMGR_NAME,IARM_BUS_PWRMGR_EVENT_MODECHANGED, powerModeChange) );
+         IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_PWRMGR_NAME,IARM_BUS_PWRMGR_EVENT_MODECHANGED, locked_iarm_handler<powerModeChange>) );
          IARM_Bus_PWRMgr_GetPowerState_Param_t param;
          res = IARM_Bus_Call(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_API_GetPowerState,
                 (void *)&param, sizeof(param));

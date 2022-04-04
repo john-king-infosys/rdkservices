@@ -33,7 +33,7 @@
 
 #include "Module.h"
 #include "utils.h"
-#include "AbstractPlugin.h"
+#include "AbstractPluginWithApiAndIARMLock.h"
 
 namespace WPEFramework {
 
@@ -51,7 +51,7 @@ namespace WPEFramework {
 		// As the registration/unregistration of notifications is realized by the class PluginHost::JSONRPC,
 		// this class exposes a public method called, Notify(), using this methods, all subscribed clients
 		// will receive a JSONRPC message as a notification, in case this method is called.
-        class LgiHdmiCec : public AbstractPlugin, public FrameListener {
+        class LgiHdmiCec : public AbstractPluginWithApiAndIARMLock<LgiHdmiCec>, public FrameListener {
         private:
 
             // We do not allow this plugin to be copied !!
@@ -146,6 +146,13 @@ namespace WPEFramework {
             m_devices_map_t m_devices;
             m_devices_map_t m_scan_devices;
             std::mutex m_mutex;
+
+            std::mutex m_apiLock;
+
+        public:
+            static std::mutex& getApiLock() {
+                return _instance->m_apiLock;
+            }
         };
     } // namespace Plugin
 } // namespace WPEFramework

@@ -25,7 +25,7 @@
 #include "utils.h"
 #include "dsTypes.h"
 #include "tptimer.h"
-#include "AbstractPlugin.h"
+#include "AbstractPluginWithApiAndIARMLock.h"
 #include "libIBus.h"
 #include "libIBusDaemon.h"
 #include "irMgr.h"
@@ -47,7 +47,7 @@ namespace WPEFramework {
 		// As the registration/unregistration of notifications is realized by the class PluginHost::JSONRPC,
 		// this class exposes a public method called, Notify(), using this methods, all subscribed clients
 		// will receive a JSONRPC message as a notification, in case this method is called.
-        class DisplaySettings : public AbstractPlugin {
+        class DisplaySettings : public AbstractPluginWithApiAndIARMLock<DisplaySettings> {
         private:
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
@@ -206,10 +206,15 @@ namespace WPEFramework {
                 ARC_STATE_ARC_EXIT
             };
 
-            int m_currentArcRoutingState; 
+            int m_currentArcRoutingState;
+            std::mutex m_apiLock;
 
         public:
             static DisplaySettings* _instance;
+
+            static std::mutex& getApiLock() {
+                return _instance->m_apiLock;
+            }
 
         };
 	} // namespace Plugin

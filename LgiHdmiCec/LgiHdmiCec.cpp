@@ -121,7 +121,7 @@ namespace WPEFramework
         static std::atomic<int> libcecInitStatus{0};
 
         LgiHdmiCec::LgiHdmiCec()
-        : AbstractPlugin(),
+        : AbstractPluginWithApiAndIARMLock(),
             cecSettingEnabled(false),cecEnableStatus(false),smConnection(nullptr),
             m_scan_id(0), m_updated(false), m_rescan_in_progress(true), m_system_audio_mode(false)
         {
@@ -178,12 +178,12 @@ namespace WPEFramework
             if (Utils::IARM::init())
             {
                 IARM_Result_t res;
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_DAEMON_INITIALIZED,cecMgrEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_STATUS_UPDATED,cecMgrEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG, dsHdmiEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_DEVICESTATUSCHANGE, cecHostDeviceStatusChangedEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_DEVICESTATUSUPDATEEND, cecHostDeviceStatusUpdateEndEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_CECSTATUSCHANGE, cecHostCecStatusChange) );
+                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_DAEMON_INITIALIZED,locked_iarm_handler<cecMgrEventHandler>) );
+                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_STATUS_UPDATED,locked_iarm_handler<cecMgrEventHandler>) );
+                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG, locked_iarm_handler<dsHdmiEventHandler>) );
+                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_DEVICESTATUSCHANGE, locked_iarm_handler<cecHostDeviceStatusChangedEventHandler>) );
+                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_DEVICESTATUSUPDATEEND, locked_iarm_handler<cecHostDeviceStatusUpdateEndEventHandler>) );
+                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_CECSTATUSCHANGE, locked_iarm_handler<cecHostCecStatusChange>) );
             }
         }
 
@@ -642,7 +642,6 @@ namespace WPEFramework
 
         void LgiHdmiCec::CECEnable(void)
         {
-            std::lock_guard<std::mutex> guard(m_mutex);
             LOGWARN("Entered CECEnable");
             if (cecEnableStatus)
             {
@@ -682,7 +681,6 @@ namespace WPEFramework
 
         void LgiHdmiCec::CECDisable(void)
         {
-            std::lock_guard<std::mutex> guard(m_mutex);
             LOGWARN("Entered CECDisable ");
 
             if(!cecEnableStatus)
