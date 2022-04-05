@@ -255,7 +255,7 @@ namespace WPEFramework {
                 for (size_t i = 0; i < aPorts.size(); i++)
                 {
                      device::AudioOutputPort &vPort = aPorts.at(i);
-                     vPort.reInitializeAudioOutputPort();
+//                     vPort.reInitializeAudioOutputPort();
                  }
             }
             catch(const device::Exception& err)
@@ -460,7 +460,7 @@ namespace WPEFramework {
                 IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_AUDIO_OUT_HOTPLUG, dsHdmiEventHandler) );
 		IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_FORMAT_UPDATE, audioFormatUpdateEventHandler) );
                 IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_EVENT_MODECHANGED, powerEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_PORT_STATE, audioPortStateEventHandler) );
+//TODO:dunfell:rdk10 IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_PORT_STATE, audioPortStateEventHandler) );
  
                 res = IARM_Bus_Call(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_API_GetPowerState, (void *)&param, sizeof(param));
                 if (res == IARM_RESULT_SUCCESS)
@@ -497,7 +497,7 @@ namespace WPEFramework {
                 IARM_CHECK( IARM_Bus_UnRegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_AUDIO_OUT_HOTPLUG) );
 		IARM_CHECK( IARM_Bus_UnRegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_FORMAT_UPDATE) );
                 IARM_CHECK( IARM_Bus_UnRegisterEventHandler(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_EVENT_MODECHANGED) );
-                IARM_CHECK( IARM_Bus_UnRegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_AUDIO_PORT_STATE) );
+//TODO:dunfell:rdk10 IARM_CHECK( IARM_Bus_UnRegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_AUDIO_PORT_STATE) );
             }
 
             try
@@ -832,6 +832,8 @@ namespace WPEFramework {
         
         void DisplaySettings::audioPortStateEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
         {
+//TODO:dunfell:rdk10
+#if 0
             dsAudioPortState_t audioPortState = dsAUDIOPORT_STATE_UNINITIALIZED;
             LOGINFO("%s \n", __FUNCTION__);
             switch (eventId) {
@@ -857,6 +859,7 @@ namespace WPEFramework {
                   LOGERR("Invalid event ID\n");
                   break;
            }  
+#endif 0
         }  
  
         void setResponseArray(JsonObject& response, const char* key, const vector<string>& items)
@@ -2611,9 +2614,16 @@ namespace WPEFramework {
             try
             {
                 device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
+//TODO:dunfell:rdk10
+#if 0
                 compressionlevel = aPort.getCompression2();
                 response["compressionlevel"] = compressionlevel;
                                response["enable"] = (compressionlevel ? true : false);
+#else
+                response["compressionlevel"] = 0;
+                response["enable"] = false;
+                success = false;
+#endif
             }
             catch(const device::Exception& err)
             {
@@ -4279,7 +4289,12 @@ namespace WPEFramework {
             try
             {
                 device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
+//TODO:dunfell:rdk10
+#if 0
                 aPort.resetDialogEnhancement();
+#else
+                success = false;
+#endif
             }
             catch (const device::Exception& err)
             {
@@ -4297,7 +4312,12 @@ namespace WPEFramework {
             try
             {
                 device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
+//TODO:dunfell:rdk10
+#if 0
                 aPort.resetBassEnhancer();
+#else
+                success = false;
+#endif
             }
             catch (const device::Exception& err)
             {
@@ -4315,7 +4335,12 @@ namespace WPEFramework {
             try
             {
                 device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
+//TODO:dunfell:rdk10
+#if 0
                 aPort.resetSurroundVirtualizer();
+#else
+                success = false;
+#endif
             }
             catch (const device::Exception& err)
             {
@@ -4333,7 +4358,12 @@ namespace WPEFramework {
             try
             {
                 device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
+//TODO:dunfell:rdk10
+#if 0
                 aPort.resetVolumeLeveller();
+#else
+                success = false;
+#endif
             }
             catch (const device::Exception& err)
             {
