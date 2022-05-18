@@ -503,10 +503,10 @@ namespace WPEFramework {
 		IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_VIDEO_FORMAT_UPDATE, formatUpdateEventHandler) );
                 IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_EVENT_MODECHANGED, powerEventHandler) );
                 IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_PORT_STATE, audioPortStateEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_ASSOCIATED_AUDIO_MIXING_CHANGED, dsSettingsChangeEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_FADER_CONTROL_CHANGED, dsSettingsChangeEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_PRIMARY_LANGUAGE_CHANGED, dsSettingsChangeEventHandler) );
-                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_SECONDARY_LANGUAGE_CHANGED, dsSettingsChangeEventHandler) );
+//                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_ASSOCIATED_AUDIO_MIXING_CHANGED, dsSettingsChangeEventHandler) );
+//                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_FADER_CONTROL_CHANGED, dsSettingsChangeEventHandler) );
+//                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_PRIMARY_LANGUAGE_CHANGED, dsSettingsChangeEventHandler) );
+//                IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME, IARM_BUS_DSMGR_EVENT_AUDIO_SECONDARY_LANGUAGE_CHANGED, dsSettingsChangeEventHandler) );
                 res = IARM_Bus_Call(IARM_BUS_PWRMGR_NAME, IARM_BUS_PWRMGR_API_GetPowerState, (void *)&param, sizeof(param));
 
                 if (res == IARM_RESULT_SUCCESS)
@@ -945,6 +945,7 @@ namespace WPEFramework {
                 return;
             }
             switch (eventId) {
+#if 0
                 case IARM_BUS_DSMGR_EVENT_AUDIO_ASSOCIATED_AUDIO_MIXING_CHANGED:
                   {
                     bool mixing = false;
@@ -987,6 +988,7 @@ namespace WPEFramework {
                     }
                   }
                   break;
+#endif
                 default:
                     LOGERR("Unhandled Event... \n");
                     break;
@@ -3215,10 +3217,10 @@ namespace WPEFramework {
                     if (device::Host::getInstance().isHDMIOutPortPresent())
                     {
                         device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                        aPort.setAssociatedAudioMixing(mixing);
+//                        aPort.setAssociatedAudioMixing(mixing);
                     }
                     else {
-                        device::Host::getInstance().setAssociatedAudioMixing(mixing);
+//                        device::Host::getInstance().setAssociatedAudioMixing(mixing);
                     }
                 }
                 catch (const device::Exception& err)
@@ -3242,10 +3244,10 @@ namespace WPEFramework {
                     if (device::Host::getInstance().isHDMIOutPortPresent())
                     {
                         device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                        aPort.getAssociatedAudioMixing(&mixing);
+//                        aPort.getAssociatedAudioMixing(&mixing);
                     }
                     else {
-                        device::Host::getInstance().getAssociatedAudioMixing(&mixing);
+//                        device::Host::getInstance().getAssociatedAudioMixing(&mixing);
                     }
                     response["mixing"] = mixing;
                 }
@@ -3281,10 +3283,10 @@ namespace WPEFramework {
                     if (device::Host::getInstance().isHDMIOutPortPresent())
                     {
                         device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                        aPort.setFaderControl(mixerBalance);
+//                        aPort.setFaderControl(mixerBalance);
                     }
                     else {
-                        device::Host::getInstance().setFaderControl(mixerBalance);
+//                        device::Host::getInstance().setFaderControl(mixerBalance);
                     }
                 }
                 catch (const device::Exception& err)
@@ -3307,10 +3309,10 @@ namespace WPEFramework {
                     if (device::Host::getInstance().isHDMIOutPortPresent())
                     {
                         device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                        aPort.getFaderControl(&mixerBalance);
+//                        aPort.getFaderControl(&mixerBalance);
                     }
                     else {
-                        device::Host::getInstance().getFaderControl(&mixerBalance);
+//                        device::Host::getInstance().getFaderControl(&mixerBalance);
                     }
                     response["mixerBalance"] = mixerBalance;
                 }
@@ -3337,10 +3339,10 @@ namespace WPEFramework {
                 if (device::Host::getInstance().isHDMIOutPortPresent())
                 {
                     device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                    aPort.setPrimaryLanguage(primaryLanguage);
+//                    aPort.setPrimaryLanguage(primaryLanguage);
 		}
                 else {
-                    device::Host::getInstance().setPrimaryLanguage(primaryLanguage);
+//                    device::Host::getInstance().setPrimaryLanguage(primaryLanguage);
                 }
             }
             catch (const device::Exception& err)
@@ -3365,10 +3367,10 @@ namespace WPEFramework {
                 if (device::Host::getInstance().isHDMIOutPortPresent())
                 {
                     device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                    aPort.getPrimaryLanguage(primaryLanguage);
+//                    aPort.getPrimaryLanguage(primaryLanguage);
                 }
                 else {
-                    device::Host::getInstance().getPrimaryLanguage(primaryLanguage);
+//                    device::Host::getInstance().getPrimaryLanguage(primaryLanguage);
                 }
                 response["lang"] = primaryLanguage;
             }
@@ -3396,10 +3398,10 @@ namespace WPEFramework {
                 if (device::Host::getInstance().isHDMIOutPortPresent())
                 {
                     device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                    aPort.setSecondaryLanguage(secondaryLanguage);
+//                    aPort.setSecondaryLanguage(secondaryLanguage);
                 }
                 else {
-                    device::Host::getInstance().setSecondaryLanguage(secondaryLanguage);
+//                    device::Host::getInstance().setSecondaryLanguage(secondaryLanguage);
                 }
             }
             catch (const device::Exception& err)
@@ -3424,10 +3426,10 @@ namespace WPEFramework {
                 if (device::Host::getInstance().isHDMIOutPortPresent())
                 {
                     device::AudioOutputPort aPort = device::Host::getInstance().getAudioOutputPort(audioPort);
-                    aPort.getSecondaryLanguage(secondaryLanguage);
+//                    aPort.getSecondaryLanguage(secondaryLanguage);
                 }
                 else {
-                    device::Host::getInstance().getSecondaryLanguage(secondaryLanguage);
+//                    device::Host::getInstance().getSecondaryLanguage(secondaryLanguage);
                 }
                 response["lang"] = secondaryLanguage;
             }
