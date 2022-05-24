@@ -153,7 +153,7 @@ namespace Plugin {
                 }
             }
 
-            result->Body(Core::proxy_cast<Web::IBody>(response));
+            result->Body(response);
             result->ContentType = Web::MIME_JSON;
         } else if ((request.Verb == Web::Request::HTTP_PUT) && (index.Next() == true)) {
             if ((index.Current() == _T("on")) || (index.Current() == _T("off"))) {
