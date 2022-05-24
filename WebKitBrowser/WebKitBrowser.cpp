@@ -445,7 +445,7 @@ namespace WebKitBrowser {
             _children = Core::ProcessInfo::Iterator(_main.Id());
             return ((_startTime == 0) || (_main.IsActive() == true) ? 1 : 0) + _children.Count();
         }
-        const bool IsOperational() const override
+        bool IsOperational() const override
         {
             uint32_t requiredProcesses = 0;
 
