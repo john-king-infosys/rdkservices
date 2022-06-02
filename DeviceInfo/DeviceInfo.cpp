@@ -38,7 +38,7 @@ namespace Plugin {
         _skipURL = static_cast<uint8_t>(service->WebPrefix().length());
         _subSystem = service->SubSystems();
         _service = service;
-        _systemId = Core::SystemInfo::Instance().Id(Core::SystemInfo::Instance().RawDeviceId(), ~0);
+        _systemId = "unknown_stuff_TODO"; // Core::SystemInfo::Instance().Id(Core::SystemInfo::Instance().RawDeviceId(), ~0);
 
         ASSERT(_subSystem != nullptr);
 
@@ -103,7 +103,7 @@ namespace Plugin {
             // TODO RB: I guess we should do something here to return other info (e.g. time) as well.
 
             result->ContentType = Web::MIMETypes::MIME_JSON;
-            result->Body(Core::proxy_cast<Web::IBody>(response));
+            result->Body(response);
         } else {
             result->ErrorCode = Web::STATUS_BAD_REQUEST;
             result->Message = _T("Unsupported request for the [DeviceInfo] service.");

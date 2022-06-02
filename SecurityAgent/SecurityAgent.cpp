@@ -78,7 +78,7 @@ namespace Plugin {
         string version = service->Version();
 
         _skipURL = static_cast<uint8_t>(service->WebPrefix().length());
-        Core::File aclFile("/opt/thunder_acl.json", true);
+        Core::File aclFile("/opt/thunder_acl.json");
         
         if (aclFile.Exists() == false) {
             aclFile = "/etc/thunder_acl.json";
