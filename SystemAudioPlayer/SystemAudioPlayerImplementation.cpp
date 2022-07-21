@@ -22,6 +22,7 @@
 #include "impl/Helper.h"
 #include "base64.h"
 #include "UtilsJsonRpc.h"
+#include "utils.h"
 
 #define SAP_MAJOR_VERSION 1
 #define SAP_MINOR_VERSION 0

@@ -27,7 +27,7 @@
 namespace WPEFramework {
 
 namespace {
-
+/*
     static Plugin::Metadata<Plugin::SystemAudioPlayer> metadata(
         // Version (Major, Minor, Patch)
         API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH,
@@ -38,6 +38,7 @@ namespace {
         // Controls
         {}
     );
+*/
 }
 
 namespace Plugin {
@@ -45,7 +46,7 @@ namespace Plugin {
     /*
      *Register SystemAudioPlayer module as wpeframework plugin
      **/
-    SERVICE_REGISTRATION(SystemAudioPlayer, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
+    SERVICE_REGISTRATION(SystemAudioPlayer, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR/*, API_VERSION_NUMBER_PATCH*/);
 
     const string SystemAudioPlayer::Initialize(PluginHost::IShell* service)
     {

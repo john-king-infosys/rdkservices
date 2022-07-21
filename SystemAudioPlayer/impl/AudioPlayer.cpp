@@ -24,7 +24,7 @@ SAPEventCallback* AudioPlayer::m_callback=NULL;
 //static bool sys_playing =false;
 
 AudioPlayer::AudioPlayer(AudioType audioType,SourceType sourceType,PlayMode playMode,int objectIdentifier)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     this->audioType = audioType;
     this->sourceType = sourceType;
     this->playMode = playMode;
@@ -69,7 +69,7 @@ AudioPlayer::AudioPlayer(AudioType audioType,SourceType sourceType,PlayMode play
 }
 
 AudioPlayer::~AudioPlayer()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO("SAP: AudioPlayer Destructor\n");
     if(sourceType == DATA || sourceType == WEBSOCKET)
     {   
@@ -96,7 +96,7 @@ void AudioPlayer::Init(SAPEventCallback *callback)
 }
 
 void AudioPlayer::DeInit()
-{   
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);   
     SAPLOG_INFO("SAP: AudioPlayer DeInit\n");
     if(g_main_loop_is_running(m_main_loop))
         g_main_loop_quit(m_main_loop);
@@ -106,14 +106,14 @@ void AudioPlayer::DeInit()
 }
 
 void AudioPlayer::event_loop()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     m_main_loop = g_main_loop_new(NULL, false);
     g_main_loop_run(m_main_loop);
 }
 
 //Set PCM audio Caps
 bool AudioPlayer::configPCMCaps(const std::string format, int rate, int channels, const std::string layout)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO("configPCMCaps\n");
     //Extra check
     if( isPlaying())
@@ -169,7 +169,7 @@ bool AudioPlayer::configPCMCaps(const std::string format, int rate, int channels
 
 //Get a new audio caps , who uses has to release this caps
 GstCaps * AudioPlayer::getPCMAudioCaps( const std::string format, int rate, int channels, const std::string layout)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO("SAP:  PCM config format=%s rate=%d channels=%d, layout=%s",format.c_str(),rate,channels,layout.c_str());
     GstCaps *audiocaps = NULL;
     audiocaps = gst_caps_new_simple("audio/x-raw", "format", G_TYPE_STRING, format.c_str(), "rate", G_TYPE_INT, rate,
@@ -182,7 +182,7 @@ GstCaps * AudioPlayer::getPCMAudioCaps( const std::string format, int rate, int 
 }
 
 bool AudioPlayer::isPlaying()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     //TODO Handle error as not Playing
     bool playing = false;
     if( m_pipeline)
@@ -194,7 +194,7 @@ bool AudioPlayer::isPlaying()
 }
 
 void AudioPlayer::createPipeline(bool smartVolumeEnable)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     GstCaps *audiocaps = NULL;
     SAPLOG_INFO("SAP: Creating Pipeline...\n");
     m_pipeline = gst_pipeline_new(NULL);
@@ -414,14 +414,14 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
 }
 
 int AudioPlayer::GstBusCallback(GstBus *, GstMessage *message, gpointer data) 
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     AudioPlayer *player  = (AudioPlayer*) data;
     return player->handleMessage(message);
 }
 
 
 gboolean AudioPlayer::PushDataAppSrc()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     while(m_running)
     {	    
         Buffer *buffer =NULL;
@@ -491,7 +491,7 @@ gboolean AudioPlayer::PushDataAppSrc()
 }
 
 void AudioPlayer::wsConnectionStatus(WSStatus status)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     switch (status)
     {
         case CONNECTED:     break;
@@ -524,7 +524,7 @@ void AudioPlayer::wsConnectionStatus(WSStatus status)
 }
 
 void AudioPlayer::push_data(const void *ptr,int length)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     if(!bufferQueue->isFull())
     {
 	Buffer *buffer = new Buffer();
@@ -534,7 +534,7 @@ void AudioPlayer::push_data(const void *ptr,int length)
 }
 
 bool AudioPlayer::handleMessage(GstMessage *message) 
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     GError* error = NULL;
     gchar* debug = NULL;
     if(!m_pipeline) 
@@ -731,7 +731,7 @@ bool AudioPlayer::handleMessage(GstMessage *message)
 }
 
 void AudioPlayer::resetPipeline()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_WARNING("Resetting Pipeline...player id %d\n",getObjectIdentifier());
 
     // Detect pipe line error and destroy the pipeline if any
@@ -756,7 +756,7 @@ void AudioPlayer::resetPipeline()
 }
 
 void AudioPlayer::resetPipelineForSmartVolumeControl(bool smartVolumeEnable)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_WARNING("Resetting Pipeline Smart Volume Control...player id %d\n",getObjectIdentifier());
 
     destroyPipeline();
@@ -770,7 +770,7 @@ void AudioPlayer::resetPipelineForSmartVolumeControl(bool smartVolumeEnable)
 }
 
 bool AudioPlayer::waitForStatus(GstState expected_state, uint32_t timeout_ms) 
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     if(m_pipeline) 
     {
         GstState state;
@@ -794,7 +794,7 @@ bool AudioPlayer::waitForStatus(GstState expected_state, uint32_t timeout_ms)
 }
 
 void AudioPlayer::destroyPipeline()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_WARNING("SAP: Destroying Pipeline...Player id %d\n",getObjectIdentifier());
 
     if(m_pipeline) {
@@ -806,7 +806,7 @@ void AudioPlayer::destroyPipeline()
 }
 
 void AudioPlayer::Play(std::string url)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     std::lock_guard<std::mutex> lock(m_playMutex);
     m_url = url;
     SAPLOG_INFO("SAP: AudioPlayer Play invoked Playerid %d..URL %s\n",getObjectIdentifier(),m_url.c_str());
@@ -824,7 +824,7 @@ void AudioPlayer::Play(std::string url)
 }
 
 void AudioPlayer::configWsSecParams(const impl::SecurityParameters& secParams)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     std::lock_guard<std::mutex> lock(m_playMutex);
     m_secParams = secParams;
     SAPLOG_INFO("SAP: AudioPlayer configuring websocket security parameters with %i CA files, cert file: %s and key file: %s",
@@ -832,7 +832,7 @@ void AudioPlayer::configWsSecParams(const impl::SecurityParameters& secParams)
 }
 
 void AudioPlayer::PlayBuffer(const char *data,int length)
-{  
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);  
     std::lock_guard<std::mutex> lock(m_apiMutex);
     SAPLOG_INFO("SAP: AudioPlayer PlayBuffer invoked Playerid %d\n",getObjectIdentifier());
     if(m_pipeline)
@@ -844,7 +844,7 @@ void AudioPlayer::PlayBuffer(const char *data,int length)
 }
 
 bool AudioPlayer::Pause()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     std::lock_guard<std::mutex> lock(m_apiMutex);
     SAPLOG_INFO("SAP: AudioPlayer Pause Playerid %d\n",getObjectIdentifier());
     if( m_pipeline )
@@ -866,7 +866,7 @@ bool AudioPlayer::Pause()
 }
 
 void AudioPlayer::Stop()
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO("SAP: AudioPlayer Stop Playerid %d\n",getObjectIdentifier());
     std::lock_guard<std::mutex> lock(m_apiMutex);
     if(sourceType == DATA || sourceType == WEBSOCKET )
@@ -887,7 +887,7 @@ void AudioPlayer::Stop()
     
 }
 bool AudioPlayer::Resume()
-{  
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);  
     std::lock_guard<std::mutex> lock(m_apiMutex);
     SAPLOG_INFO("SAP: AudioPlayer Resume Playerid %d\n",getObjectIdentifier());
     if(m_pipeline )
@@ -931,7 +931,7 @@ std::string AudioPlayer::getUrl()
 
 //Primary Audio control/dock
 void AudioPlayer::setPrimaryVolume( int primVol)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     if( m_prevPrimVolume != primVol )
     {
         //Prim Mix gain
@@ -943,7 +943,7 @@ void AudioPlayer::setPrimaryVolume( int primVol)
 
 //Player audio control
 void AudioPlayer::setVolume( int thisVol)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO(" Prev Player Volume=%d cur Vol=%d",m_prevThisVolume , thisVol );
 #ifdef PLATFORM_AMLOGIC
     if(audioType == PCM || audioType == WAV)
@@ -970,7 +970,7 @@ void AudioPlayer::setVolume( int thisVol)
 
 // Provision for Audio docking, only when app is speaking
 void AudioPlayer::SetMixerLevels(int primVol, int thisVol)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO("SAP: primary Volume=%d player Volume=%d",primVol , thisVol );
     if(m_primVolume >=0 ) m_primVolume = primVol;
     if(m_thisVolume >=0)     m_thisVolume = thisVol;
@@ -1014,7 +1014,7 @@ void AudioPlayer::setDetectTime( int detectTimeMs)
 
 //Player set HoldTime
 void AudioPlayer::setHoldTime( int holdTimeMs)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO(" Player Req holdTimeMs=%d",holdTimeMs );
 #ifdef PLATFORM_AMLOGIC
     guint64 holdTimeNs = holdTimeMs * 1000000;
@@ -1031,7 +1031,7 @@ void AudioPlayer::setHoldTime( int holdTimeMs)
 
 //Player set Threshold
 void AudioPlayer::setThreshold( double thresHold)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
     SAPLOG_INFO(" Player Req thresHold=%f \n",thresHold );
 #ifdef PLATFORM_AMLOGIC
     g_object_set(G_OBJECT(m_audioCutter), "threshold", thresHold, NULL);
@@ -1041,7 +1041,7 @@ void AudioPlayer::setThreshold( double thresHold)
 
 //Player set ThresholdDB Level
 void AudioPlayer::setThresholdDB( double thresHold_dB)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
 
     SAPLOG_INFO(" Player Req thresHold_dB=%f \n",thresHold_dB );
 #ifdef PLATFORM_AMLOGIC
@@ -1052,7 +1052,7 @@ void AudioPlayer::setThresholdDB( double thresHold_dB)
 
 // Provision for Volume Control
 void AudioPlayer::SetSmartVolControl(bool smartVolumeEnable, double threshold, int detectTimeMs, int holdTimeMs, int duckPercent)
-{
+{ printf("%s : %d\n", __FUNCTION__, __LINE__);
    if( isPlaying())
    {
       SAPLOG_ERROR("playback is in progress, smart volume control cannot be applied");
