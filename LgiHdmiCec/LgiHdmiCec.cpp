@@ -80,6 +80,7 @@ namespace
 
     inline void requestRescanning(int id)
     {
+        LOGINFO("requestRescanning: id=%d", id);
         IARM_Bus_CECHost_ConfigureScan_Param_t param  {};
         param.needFullUpdate = true;
         param.scanReasonId = id;
@@ -291,7 +292,7 @@ namespace WPEFramework
 
         void LgiHdmiCec::onHdmiHotPlug(int connectStatus)
         {
-            LOGINFO("Status %d", connectStatus);
+            LOGINFO("Status %d cecEnableStatus: %d", connectStatus, cecEnableStatus.load());
             {
                 std::lock_guard<std::mutex> guard(m_mutex);
                 m_devices.clear();
@@ -1100,7 +1101,8 @@ namespace WPEFramework
                     LOGWARN("skipped: no changes on devices (empty callback)");
                 }
             }
-            m_scan_id = 0;
+            // m_scan_id = 0; HUMAXEOSR-973: previous 'm_scan_id != eData->scanId' case was invalidating the current scan id
+            // HUMAXEOSR-973: we can just keep on increasing the scan id, it should actually lower the chances of scan id collision
         }
 
         void LgiHdmiCec::cecHostDeviceStatusUpdateEndEventHandler(const char* owner_str, IARM_EventId_t eventId, void* data_ptr, size_t len)
