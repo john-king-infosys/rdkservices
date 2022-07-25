@@ -27,6 +27,7 @@ add_library(${MODULE_NAME} SHARED
         ../helpers/WebSockets/JsonRpc/Request.cpp
         ../helpers/WebSockets/JsonRpc/Response.cpp
         ../helpers/WebSockets/JsonRpc/Notification.cpp
+        ../helpers/utils.cpp
         )
 set_target_properties(${MODULE_NAME} PROPERTIES
         CXX_STANDARD 11
@@ -79,6 +80,18 @@ target_link_libraries(${MODULE_NAME} PRIVATE ${Boost_SYSTEM_LIBRARY})
 target_link_libraries(${MODULE_NAME} PRIVATE OpenSSL::SSL)
 target_link_libraries(${MODULE_NAME} PRIVATE OpenSSL::Crypto)
 target_link_libraries(${MODULE_NAME} PRIVATE ${Boost_FILESYSTEM_LIBRARY})
+
+find_package(DS)
+find_package(IARMBus)
+
+if (NOT (DS_FOUND AND IARMBUS_FOUND))
+    message( FATAL_ERROR "DS not found, CMake will exit." )
+endif()
+
+# add_definitions(-DDS_FOUND)
+target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS})
+target_include_directories(${MODULE_NAME} PRIVATE ${DS_INCLUDE_DIRS})
+target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}SecurityUtil ${IARMBUS_LIBRARIES} ${DS_LIBRARIES})
 
 install(TARGETS ${MODULE_NAME}
         DESTINATION lib/${STORAGE_DIRECTORY}/plugins)

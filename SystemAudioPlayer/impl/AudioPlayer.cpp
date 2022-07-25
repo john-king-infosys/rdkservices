@@ -201,6 +201,7 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
     if (!m_pipeline) {
 
         SAPLOG_ERROR("SAP: Failed to create gstreamer pipeline player id:%d\n",getObjectIdentifier());
+        throw std::runtime_error("SAP: Failed to create gstreamer pipeline player");
         return;
     }
      // create soc specific elements..generic elements
@@ -226,6 +227,10 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
     g_object_set(G_OBJECT(m_audioSink), "media-tunnel",  FALSE, NULL);
     g_object_set(G_OBJECT(m_audioSink), "audio-service",  TRUE, NULL);
 #else
+    GstElement *audiofilter = gst_element_factory_make("capsfilter", NULL);
+    audiocaps = gst_caps_new_simple("audio/x-raw", "channels", G_TYPE_INT, 2, "rate", G_TYPE_INT, 48000, NULL);
+    g_object_set( G_OBJECT(audiofilter),  "caps",  audiocaps, NULL );
+    m_audioVolume = gst_element_factory_make("volume", NULL);
     m_audioSink = gst_element_factory_make("autoaudiosink", NULL); 
 #endif 
     if(sourceType == HTTPSRC)
@@ -360,6 +365,9 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
         #elif defined(PLATFORM_REALTEK)
         gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
         result = gst_element_link_many (m_source,wavparser,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
+        #else
+        gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
+        result = gst_element_link_many (m_source,wavparser,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
         #endif
     }
 
@@ -403,6 +411,7 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
         SAPLOG_ERROR("SAP: Failed to link element Player id %d\n",getObjectIdentifier());
         gst_object_unref(m_pipeline);
         m_pipeline = NULL;
+        throw std::runtime_error("SAP: Failed to link element Player id");
         return;
     }
 
@@ -963,7 +972,9 @@ void AudioPlayer::setVolume( int thisVol)
         g_object_set(G_OBJECT(m_audioVolume), "stream-volume", (double)thisVol/100, NULL);
     }
 #elif defined(PLATFORM_REALTEK)
-    g_object_set(G_OBJECT(m_audioVolume), "volume", (double) 4.0 * (thisVol/100), NULL);
+    g_object_set(G_OBJECT(m_audioVolume), "volume", (double) 4.0 * (thisVol/100.0), NULL);
+#else
+    g_object_set(G_OBJECT(m_audioVolume), "volume", (double) 4.0 * (thisVol/100.0), NULL);
 #endif
     return;
 }
