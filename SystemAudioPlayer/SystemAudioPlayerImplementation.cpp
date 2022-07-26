@@ -20,7 +20,7 @@
 #include "SystemAudioPlayerImplementation.h"
 #include <sys/prctl.h>
 #include "impl/Helper.h"
-#include "base64.h"
+#include "trower-base64/base64.h"
 #include "UtilsJsonRpc.h"
 #include "utils.h"
 

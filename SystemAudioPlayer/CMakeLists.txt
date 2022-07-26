@@ -68,7 +68,7 @@ target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
 target_include_directories(${MODULE_NAME} PRIVATE ../helpers/WebSockets)
 target_include_directories(${MODULE_NAME} PRIVATE ${GSTREAMER_INCLUDES})
 target_include_directories(${MODULE_NAME} PRIVATE ${GSTREAMERBASE_INCLUDE_DIRS})
-target_include_directories(${MODULE_NAME} PRIVATE /home/tomasz.karczewski/builds/apollo-flutter-20220719210004/onemw/build-brcm972554pck-refboard/tmp/sysroots/apollo-debug/usr/include/trower-base64/)
+# target_include_directories(${MODULE_NAME} PRIVATE /home/tomasz.karczewski/builds/apollo-flutter-20220719210004/onemw/build-brcm972554pck-refboard/tmp/sysroots/apollo-debug/usr/include/trower-base64/)
 
 target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
 target_link_libraries(${MODULE_NAME} PRIVATE ${CURL_LIBRARY})

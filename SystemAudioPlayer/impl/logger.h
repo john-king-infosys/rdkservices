@@ -66,27 +66,26 @@ void log(LogLevel level,
     int threadID,
     const char* format, ...);
 
-// #ifdef USE_RDK_LOGGER
-// #define _LOG(LEVEL, FORMAT, ...)          \
-//          SAP::log(LEVEL,                       \
-//          __func__, __FILE__, __LINE__, 0, \
-//          FORMAT,                          \
-//          ##__VA_ARGS__)
-// #else
-// #define _LOG(LEVEL, FORMAT, ...)          \
-//          SAP::log(LEVEL,                       \
-//          __func__, __FILE__, __LINE__, syscall(__NR_gettid), \
-//          FORMAT,                          \
-//          ##__VA_ARGS__)
-// #endif
-#define _LOG(LEVEL, FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n");
+#ifdef USE_RDK_LOGGER
+#define _LOG(LEVEL, FORMAT, ...)          \
+         SAP::log(LEVEL,                       \
+         __func__, __FILE__, __LINE__, 0, \
+         FORMAT,                          \
+         ##__VA_ARGS__)
+#else
+#define _LOG(LEVEL, FORMAT, ...)          \
+         SAP::log(LEVEL,                       \
+         __func__, __FILE__, __LINE__, syscall(__NR_gettid), \
+         FORMAT,                          \
+         ##__VA_ARGS__)
+#endif
 
-#define SAPLOG_TRACE(...)  printf(__VA_ARGS__); printf("\n");
-#define SAPLOG_VERBOSE(...)  printf(__VA_ARGS__); printf("\n");
-#define SAPLOG_INFO(...)  printf(__VA_ARGS__); printf("\n");
-#define SAPLOG_WARNING(...)  printf(__VA_ARGS__); printf("\n");
-#define SAPLOG_ERROR(...)  printf(__VA_ARGS__); printf("\n");
-#define SAPLOG_FATAL(...)  printf(__VA_ARGS__); printf("\n");
+#define SAPLOG_TRACE(FMT, ...)   _LOG(SAP::TRACE_LEVEL, FMT, ##__VA_ARGS__)
+#define SAPLOG_VERBOSE(FMT, ...) _LOG(SAP::VERBOSE_LEVEL, FMT, ##__VA_ARGS__)
+#define SAPLOG_INFO(FMT, ...)    _LOG(SAP::INFO_LEVEL, FMT, ##__VA_ARGS__)
+#define SAPLOG_WARNING(FMT, ...) _LOG(SAP::WARNING_LEVEL, FMT, ##__VA_ARGS__)
+#define SAPLOG_ERROR(FMT, ...)   _LOG(SAP::ERROR_LEVEL, FMT, ##__VA_ARGS__)
+#define SAPLOG_FATAL(FMT, ...)   _LOG(SAP::FATAL_LEVEL, FMT, ##__VA_ARGS__)
 
 } // namespace SAP
 
