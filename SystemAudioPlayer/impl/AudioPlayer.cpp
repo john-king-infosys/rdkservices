@@ -212,7 +212,13 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
         return;
     }
      // create soc specific elements..generic elements
+     // doesn't that leak?
     GstElement *convert = gst_element_factory_make("audioconvert", NULL);
+    GstElement *convert2 = gst_element_factory_make("audioconvert", NULL);
+
+    GstElement *convert3 = gst_element_factory_make("audioconvert", NULL);
+    GstElement *convert4 = gst_element_factory_make("audioconvert", NULL);
+
     GstElement *resample = gst_element_factory_make("audioresample", NULL);
 #if defined(PLATFORM_AMLOGIC)
     m_audioSink = gst_element_factory_make("amlhalasink", NULL);
@@ -239,6 +245,13 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
     g_object_set( G_OBJECT(audiofilter),  "caps",  audiocaps, NULL );
     m_audioVolume = gst_element_factory_make("volume", NULL);
     m_audioSink = gst_element_factory_make("autoaudiosink", NULL); 
+    if(smartVolumeEnable)
+    {
+       m_audioCutter = gst_element_factory_make("cutter", "NULL");
+       //set defaul db level for cutter
+       SAPLOG_INFO("SAP : set Default threshold-dB=%f",m_thresHold_dB);
+       g_object_set(G_OBJECT(m_audioCutter), "threshold-dB", m_thresHold_dB, NULL);
+    }
 #endif 
     if(sourceType == HTTPSRC)
     {
@@ -302,8 +315,10 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
             gst_bin_add_many(GST_BIN(m_pipeline), m_source, convert, resample, audiofilter, m_audioSink,m_audioVolume,NULL);
             result = gst_element_link_many (m_source,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
 	    #else
-            gst_bin_add_many(GST_BIN(m_pipeline), m_source, m_audioSink, NULL);
-            result = gst_element_link_many (m_source,m_audioSink,NULL);
+
+                gst_bin_add_many(GST_BIN(m_pipeline), m_source, m_audioSink, NULL);
+                result = gst_element_link_many (m_source,m_audioSink,NULL);
+
             #endif
         }
         else
@@ -373,8 +388,34 @@ void AudioPlayer::createPipeline(bool smartVolumeEnable)
         gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
         result = gst_element_link_many (m_source,wavparser,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
         #else
-        gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
-        result = gst_element_link_many (m_source,wavparser,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
+        if(smartVolumeEnable)
+        {
+            if (m_audioCutter) {
+                // gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, m_audioCutter, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
+                // result = gst_element_link_many (m_source,wavparser, m_audioCutter, convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
+                /*
+                    I have no idea why we need *multiple* 'convert' plugins to make cutter work.
+                    this might be some timing issue; without this I was getting:
+                        220802-11:15:35.837 [Error] [pid=23181,tid=23206] handleMessage:AudioPlayer.cpp:593 SAP: error! code: 1, Internal data stream error., Debug: ../../../gst-plugins-good-1.10.4/gst/wavparse/gstwavparse.c(2278): gst_wavparse_loop (): /GstPipeline:pipeline1/GstWavParse:wavparse1:
+                        streaming stopped, reason not-negotiated (-4)
+                    and 'cutter' plugin didn't work (on Apollo)
+                */
+
+                gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, convert3, m_audioCutter, convert2, convert4, m_audioVolume, m_audioSink, NULL);
+                result = gst_element_link_many (m_source,wavparser, convert, convert3, m_audioCutter, convert2, convert4, m_audioVolume, m_audioSink,NULL);
+
+                printf("########## !!!!!!! smartVolumeEnable CREATED AUDIOCUTTER: %p, result: %d !!!!!!! ##########\n", m_audioCutter, result);
+            } else {
+                printf("########## !!!!!!! smartVolumeEnable but no m_audioCutter !!!!!!! ##########\n");
+                gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
+                result = gst_element_link_many (m_source,wavparser,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
+            }
+        }
+        else
+        {
+            gst_bin_add_many(GST_BIN(m_pipeline), m_source, wavparser, convert, resample,audiofilter,m_audioVolume,m_audioSink, NULL);
+            result = gst_element_link_many (m_source,wavparser,convert,resample,audiofilter,m_audioVolume,m_audioSink,NULL);
+        }
         #endif
     }
 
@@ -606,6 +647,7 @@ bool AudioPlayer::handleMessage(GstMessage *message)
                 if (gst_structure_has_name(structure, "cutter")) {
                      gboolean signal_status;
                      gst_structure_get_boolean(structure,"above", &signal_status);
+                     printf("@@@@@@@@@@@@@@@@ cutter: above %d\n", signal_status);
                      if(signal_status) {
                          SAPLOG_INFO("Speech Started.! Player Volume=%d .setting Player Hold Time=%d ",m_thisVolume, m_holdTimeMs);
 			 SAPLOG_INFO("SAP: Primary program volume is set to <%d> percent",m_duckPercent);
@@ -613,6 +655,7 @@ bool AudioPlayer::handleMessage(GstMessage *message)
                          {
                             setHoldTime(m_holdTimeMs);
                             setPrimaryVolume(m_duckPercent);
+                            NEXUS_SimpleAudioDecoder_SetSolo(m_duckPercent);
                          }
                      }
                      else {
@@ -1018,7 +1061,7 @@ void AudioPlayer::setAppSysPlayingSate(bool state)
 void AudioPlayer::setDetectTime( int detectTimeMs)
 {
     SAPLOG_INFO(" Player Req detectTimeMs=%d",detectTimeMs );
-#ifdef PLATFORM_AMLOGIC
+// #ifdef PLATFORM_AMLOGIC
     guint64 detectTimeNs = detectTimeMs * 1000000;
 
 
@@ -1028,7 +1071,7 @@ void AudioPlayer::setDetectTime( int detectTimeMs)
     SAPLOG_INFO(" Player cur detectTimeNs=%" G_GUINT64_FORMAT " set detectTimeNs=%" G_GUINT64_FORMAT "\n",cutter_detecttimeNs, detectTimeNs );
 
     g_object_set(G_OBJECT(m_audioCutter), "run-length", detectTimeNs, NULL);
-#endif
+// #endif
     return;
 }
 
@@ -1036,7 +1079,7 @@ void AudioPlayer::setDetectTime( int detectTimeMs)
 void AudioPlayer::setHoldTime( int holdTimeMs)
 {
     SAPLOG_INFO(" Player Req holdTimeMs=%d",holdTimeMs );
-#ifdef PLATFORM_AMLOGIC
+// #ifdef PLATFORM_AMLOGIC
     guint64 holdTimeNs = holdTimeMs * 1000000;
 
     guint64 cutter_holdtimeNs;
@@ -1045,7 +1088,7 @@ void AudioPlayer::setHoldTime( int holdTimeMs)
     SAPLOG_INFO(" Player get HoldTimeNs=%" G_GUINT64_FORMAT " set HoldTimeNs=%" G_GUINT64_FORMAT "\n",cutter_holdtimeNs, holdTimeNs );
 
     g_object_set(G_OBJECT(m_audioCutter), "run-length", holdTimeNs, NULL);
-#endif
+// #endif
     return;
 }
 
@@ -1053,9 +1096,9 @@ void AudioPlayer::setHoldTime( int holdTimeMs)
 void AudioPlayer::setThreshold( double thresHold)
 {
     SAPLOG_INFO(" Player Req thresHold=%f \n",thresHold );
-#ifdef PLATFORM_AMLOGIC
+// #ifdef PLATFORM_AMLOGIC
     g_object_set(G_OBJECT(m_audioCutter), "threshold", thresHold, NULL);
-#endif
+// #endif
     return;
 }
 
@@ -1064,9 +1107,9 @@ void AudioPlayer::setThresholdDB( double thresHold_dB)
 {
 
     SAPLOG_INFO(" Player Req thresHold_dB=%f \n",thresHold_dB );
-#ifdef PLATFORM_AMLOGIC
+// #ifdef PLATFORM_AMLOGIC
     g_object_set(G_OBJECT(m_audioCutter), "threshold-dB", thresHold_dB, NULL);
-#endif
+// #endif
     return;
 }
 

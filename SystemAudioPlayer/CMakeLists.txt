@@ -80,6 +80,7 @@ target_link_libraries(${MODULE_NAME} PRIVATE ${Boost_SYSTEM_LIBRARY})
 target_link_libraries(${MODULE_NAME} PRIVATE OpenSSL::SSL)
 target_link_libraries(${MODULE_NAME} PRIVATE OpenSSL::Crypto)
 target_link_libraries(${MODULE_NAME} PRIVATE ${Boost_FILESYSTEM_LIBRARY})
+target_link_libraries(${MODULE_NAME} PRIVATE libnexus.so)
 
 find_package(DS)
 find_package(IARMBus)
