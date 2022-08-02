@@ -4,6 +4,13 @@
 #include "SecuredWebSocketClient.h"
 #include "UnsecuredWebSocketClient.h"
 
+#include "nexus_types.h"
+#include "nexus_core_utils.h"
+#include "nexus_platform.h"
+#include "nxclient.h"
+#include "nexus_simple_stc_channel.h"
+#include "nexus_simple_audio_decoder.h"
+
 #include <cmath>
 #define AUDIO_GST_FRAGMENT_MAX_SIZE     (128 * 1024)
 #define PLAYBACK_STARTED "PLAYBACK_STARTED"
@@ -582,6 +589,7 @@ bool AudioPlayer::handleMessage(GstMessage *message)
 
         case GST_MESSAGE_EOS: {
                 SAPLOG_INFO("Audio EOS message received");
+                NEXUS_SimpleAudioDecoder_SetSoloEnd();
                 if(state != PLAYBACKERROR)
                 {
                     appsrc_firstpacket = true;
@@ -694,6 +702,7 @@ bool AudioPlayer::handleMessage(GstMessage *message)
                                     //playback start event
                                     SAPLOG_INFO("Playback started event on id:%d\n",getObjectIdentifier());
                                     m_callback->onSAPEvent(getObjectIdentifier(),PLAYBACK_STARTED);
+                                    NEXUS_SimpleAudioDecoder_SetSolo(m_primVolume);
                                 }
                                 //Multiple player might have set different primary volume.
                                 //But we set only the primary volume set by the newest player
