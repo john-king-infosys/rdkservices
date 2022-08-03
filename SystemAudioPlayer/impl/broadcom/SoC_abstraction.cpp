@@ -25,9 +25,16 @@
 
 void Soc_Initialize()
 {
-    printf("Soc_Initialize DISABLED FOR NOW");
+    // printf("Soc_Initialize DISABLED FOR NOW");
     // Utils::IARM::init();
     // device::Manager::Initialize();
+    NxClient_JoinSettings joinSettings;
+    NxClient_GetDefaultJoinSettings(&joinSettings);
+    snprintf(joinSettings.name, NXCLIENT_MAX_NAME, "%s", "SystemAudioPlayer");
+    int rc = NxClient_Join(&joinSettings);
+    if(rc) {
+        printf("XXXXXXXXXXXXXXXXXXXX NxClient_Join failed %d", rc);
+    }
 }
 
 void Soc_Deinitialize()
@@ -38,7 +45,8 @@ void Soc_Deinitialize()
 
 void SoC_ChangePrimaryVol(MixGain gain, int volume)
 {
-    printf("SoC_ChangePrimaryVol DISABLED FOR NOW: vol=%d\n", volume);
+    printf("SoC_ChangePrimaryVol NEXUS_SimpleAudioDecoder_SetSolo: vol=%d\n", volume);
+    NEXUS_SimpleAudioDecoder_SetSolo(volume);
 
     // disabled chaning the 'main' volume - there are NEXUS_SimpleAudioDecoder_SetSolo/NEXUS_SimpleAudioDecoder_SetSoloEnd
     // calls directly in AudioPlayer instead
