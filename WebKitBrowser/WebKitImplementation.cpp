@@ -1340,9 +1340,9 @@ static GSourceFuncs _handlerIntervention =
                     object->_adminLock.Unlock();
 
                     if (hasProfileChanged) {
-                        setenv("G_TLS_GNUTLS_PRIORITY", securityProfile.CipherPrio.Value().c_str(), 1);
+                        setenv("G_TLS_OPENSSL_CIPHER_LIST", securityProfile.CipherPrio.Value().c_str(), 1);
                         auto context = WKPageGetContext(object->_page);
-                        WKContextSetEnv(context, WKStringCreateWithUTF8CString("G_TLS_GNUTLS_PRIORITY"), WKStringCreateWithUTF8CString(securityProfile.CipherPrio.Value().c_str()), false, true);
+                        WKContextSetEnv(context, WKStringCreateWithUTF8CString("G_TLS_OPENSSL_CIPHER_LIST"), WKStringCreateWithUTF8CString(securityProfile.CipherPrio.Value().c_str()), false, true);
                     } else
                         SYSLOG(Logging::Notification, (_T("Security profile %s is already set"), object->_securityProfileName.c_str()));
                     return G_SOURCE_REMOVE;
