@@ -2338,11 +2338,16 @@ static GSourceFuncs _handlerIntervention =
             Core::SystemInfo::SetEnvironment(_T("WEBKIT_MAXIMUM_FPS"), maxFPS, !environmentOverride);
 
             if (width.empty() == false) {
+                Core::SystemInfo::SetEnvironment(_T("WPE_INIT_VIEW_WIDTH"), width, !environmentOverride);
                 Core::SystemInfo::SetEnvironment(_T("GST_VIRTUAL_DISP_WIDTH"), width, !environmentOverride);
             }
 
             if (height.empty() == false) {
+                fprintf(stderr, "jmanko setting height to %s\n", height.c_str());
+                Core::SystemInfo::SetEnvironment(_T("WPE_INIT_VIEW_HEIGHT"), height, !environmentOverride);
                 Core::SystemInfo::SetEnvironment(_T("GST_VIRTUAL_DISP_HEIGHT"), height, !environmentOverride);
+            } else {
+                fprintf(stderr, "jmanko no height in config...\n");
             }
 
             // Oke, so we are good to go.. Release....
