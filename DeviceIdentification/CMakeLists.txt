@@ -32,6 +32,7 @@ set(PLUGIN_DEVICEIDENTIFICATION_STARTUPORDER "" CACHE STRING "Start-up order for
 set(PLUGIN_DEVICEIDENTIFICATION_MODE "Off" CACHE STRING "Controls if the plugin should run in its own process, in process or remote")
 set(PLUGIN_DEVICEIDENTIFICATION_INTERFACE_NAME "eth0" CACHE STRING "Ethernet Card name which has to be associated for the Raw Device Id creation")
 option(PLUGIN_DEVICEIDENTIFICATION_USE_MFR "Get device identification details using MFR library" OFF)
+option(PLUGIN_DEVICEIDENTIFICATION_USE_MFR_LGI "Get device identification details using MFR library LGI" OFF)
 
 find_package(NEXUS QUIET)
 find_package(BCM_HOST QUIET)
@@ -44,8 +45,18 @@ add_library(${MODULE_NAME} SHARED
     DeviceIdentification.cpp
     DeviceIdentificationJsonRpc.cpp
     Module.cpp)
-
-if (PLUGIN_DEVICEIDENTIFICATION_USE_MFR AND MFRFWLIBS_FOUND)
+if (PLUGIN_DEVICEIDENTIFICATION_USE_MFR_LGI)
+    find_library(MFRLIB NAMES RDKMfrLib)
+    target_sources(${MODULE_NAME}
+        PRIVATE
+            Implementation/MFR_LGI/MFR.cpp)
+    target_link_libraries(${MODULE_NAME}
+        PRIVATE
+            ${MFRLIB})
+    target_include_directories(${MODULE_NAME} 
+        PRIVATE
+        "$ENV{PKG_CONFIG_SYSROOT_DIR}/usr/include/rdk/iarmmgrs-hal")
+elseif (PLUGIN_DEVICEIDENTIFICATION_USE_MFR AND MFRFWLIBS_FOUND)
     target_sources(${MODULE_NAME}
         PRIVATE
             Implementation/MFR/MFR.cpp)
