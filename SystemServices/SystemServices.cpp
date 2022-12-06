@@ -283,10 +283,11 @@ namespace WPEFramework {
         const string SystemServices::HARDWARE_ID = "hardwareID";
 	const string SystemServices::FRIENDLY_ID = "friendly_id";
 
+#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
         IARM_Bus_SYSMgr_GetSystemStates_Param_t SystemServices::paramGetSysState = {};
-
         static void _powerEventHandler(const char *owner, IARM_EventId_t eventId,
                 void *data, size_t len);
+#endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
 
 #ifdef ENABLE_THERMAL_PROTECTION
         static void handleThermalLevelChange(IARM_Bus_PWRMgr_EventData_t *param);
@@ -348,12 +349,12 @@ namespace WPEFramework {
             registerMethod("requestSystemUptime",
                     &SystemServices::requestSystemUptime, this);
             registerMethod("getStateInfo", &SystemServices::getStateInfo, this);
-#if defined(HAS_API_SYSTEM) && defined(HAS_API_POWERSTATE)
+#if defined(HAS_API_SYSTEM) && defined(HAS_API_POWERSTATE) && (defined(USE_IARMBUS) || defined(USE_IARM_BUS))
             registerMethod("getPowerState", &SystemServices::getDevicePowerState,
                     this);
             registerMethod("setPowerState", &SystemServices::setDevicePowerState,
                     this);
-#endif /* HAS_API_SYSTEM && HAS_API_POWERSTATE */
+#endif /* HAS_API_SYSTEM && HAS_API_POWERSTATE && (USE_IARMBUS || USE_IARM_BUS)*/
             registerMethod("setGzEnabled", &SystemServices::setGZEnabled, this);
             registerMethod("isGzEnabled", &SystemServices::isGZEnabled, this);
             registerMethod("hasRebootBeenRequested",
@@ -1252,6 +1253,7 @@ namespace WPEFramework {
                     }
 
                     if (changeMode) {
+#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
                         IARM_Bus_CommonAPI_SysModeChange_Param_t modeParam;
                         stringToIarmMode(oldMode, modeParam.oldMode);
                         stringToIarmMode(m_currentMode, modeParam.newMode);
@@ -1287,6 +1289,11 @@ namespace WPEFramework {
                         //set values in temp file so they can be restored in receiver restarts / crashes
                         m_temp_settings.setValue("mode", m_currentMode);
                         m_temp_settings.setValue("mode_duration", m_remainingDuration);
+#else
+                        LOGERR("Not configured to be able to change mode");
+                        populateResponseWithError(SysSrv_SupportNotAvailable, response);
+                        result = false;
+#endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
                     } else {
                         LOGWARN("Current mode '%s' not changed", m_currentMode.c_str());
                     }
@@ -1661,6 +1668,7 @@ namespace WPEFramework {
 		bool status = false;
 		JsonObject param;
 		if (parameters.HasLabel("standbyMode")) {
+#if 0
 			std::string prefMode = parameters["standbyMode"].String();
 			try {
 				LOGINFO("Set Preferred Stand by Mode to %s\n", prefMode.c_str());
@@ -1670,6 +1678,10 @@ namespace WPEFramework {
 			} catch (...) {
 				LOGERR("Error setting PreferredStandbyMode\n");
 			}
+#else
+            LOGERR("Not configured to be able to set preferred standby mode");
+            populateResponseWithError(SysSrv_SupportNotAvailable, response);
+#endif
 		} else {
 			populateResponseWithError(SysSrv_MissingKeyValues, response);
 		}
@@ -1689,6 +1701,7 @@ namespace WPEFramework {
                 JsonObject& response)
         {
             bool status = false;
+#if 0
             try {
                 const device::SleepMode &mode = device::Host::getInstance().getPreferredSleepMode();
                 std::string preferredStandbyMode = mode.toString();
@@ -1698,6 +1711,10 @@ namespace WPEFramework {
                 LOGERR("Error getting PreferredStandbyMode\n");
                 response["preferredStandbyMode"] = "";
             }
+#else
+            LOGERR("Not configured to be able to get preferred standby mode");
+            response["preferredStandbyMode"] = "";
+#endif
             returnResponse(status);
         }
 
@@ -1821,6 +1838,7 @@ namespace WPEFramework {
                 JsonObject& response)
         {
             bool status = false;
+#if 0
             JsonArray standbyModes;
             try {
                     device::List<device::SleepMode> sleepModes =
@@ -1833,6 +1851,9 @@ namespace WPEFramework {
                 LOGERR("Error getting AvailableStandbyModes\n");
             }
             response["supportedStandbyModes"] = standbyModes;
+#else
+            LOGERR("Not configured to be able to get available standby modes");
+#endif
             returnResponse(status);
         }
 
@@ -3180,6 +3201,7 @@ namespace WPEFramework {
                 JsonObject& response)
         {
             int32_t retVal = E_NOK;
+#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             JsonObject param;
             JsonObject resParam;
             string methodType;
@@ -3277,10 +3299,15 @@ namespace WPEFramework {
 	    } else {
 		    populateResponseWithError(SysSrv_MissingKeyValues, response);
 	    }
+#else
+            LOGERR("Not configured to be able get state info");
+            populateResponseWithError(SysSrv_SupportNotAvailable, response);
+#endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
             returnResponse(( E_OK == retVal)? true: false);
         }//end of getStateInfo
 
-#if defined(HAS_API_SYSTEM) && defined(HAS_API_POWERSTATE)
+#if defined(HAS_API_SYSTEM) && defined(HAS_API_POWERSTATE) && (defined(USE_IARMBUS) || defined(USE_IARM_BUS))
+
         /***
          * @brief : To retrieve Device Power State.
          * @param1[in] : {"params":{}}
@@ -3389,7 +3416,7 @@ namespace WPEFramework {
 		}
 		returnResponse(retVal);
 	}//end of setPower State
-#endif /* HAS_API_SYSTEM && HAS_API_POWERSTATE */
+#endif /* HAS_API_SYSTEM && HAS_API_POWERSTATE && (USE_IARMBUS || USE_IARM_BUS)*/
 
         /***
          * @brief : To check if Reboot has been requested or not.
@@ -3746,6 +3773,7 @@ namespace WPEFramework {
         }
 #endif //ENABLE_SET_WAKEUP_SRC_CONFIG
 
+#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
         /***
          * @brief : To handle the event of Power State change.
          *     The event is registered to the IARM event handle on powerStateChange.
@@ -3829,7 +3857,6 @@ namespace WPEFramework {
             }
         }
 
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
         /***
          * @brief : To receive System Mode Changed Event from IARM
          * @param1[in] : pointer to received data buffer.

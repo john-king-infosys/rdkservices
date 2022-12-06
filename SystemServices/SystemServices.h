@@ -205,10 +205,10 @@ namespace WPEFramework {
                 uint32_t getDeviceInfo(const JsonObject& parameters, JsonObject& response);
                 uint32_t queryMocaStatus(const JsonObject& parameters, JsonObject& response);
                 uint32_t getStateInfo(const JsonObject& parameter, JsonObject& resposne);
-#if defined(HAS_API_SYSTEM) && defined(HAS_API_POWERSTATE)
+#if defined(HAS_API_SYSTEM) && defined(HAS_API_POWERSTATE) && (defined(USE_IARMBUS) || defined(USE_IARM_BUS))
                 uint32_t getDevicePowerState(const JsonObject& parameters,JsonObject& response);
                 uint32_t setDevicePowerState(const JsonObject& parameters,JsonObject& response);
-#endif /* HAS_API_SYSTEM && HAS_API_POWERSTATE */
+#endif /* HAS_API_SYSTEM && HAS_API_POWERSTATE && (USE_IARMBUS || USE_IARM_BUS)*/
                 uint32_t isRebootRequested(const JsonObject& parameters,JsonObject& response);
                 uint32_t setGZEnabled(const JsonObject& parameters,JsonObject& response);
                 uint32_t isGZEnabled(const JsonObject& parameters,JsonObject& response);
