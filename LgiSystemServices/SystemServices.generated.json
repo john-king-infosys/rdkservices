@@ -1,0 +1,9 @@
+{
+ "locator":"libWPEFrameworkSystemServices.so",
+ "classname":"SystemServices",
+ "precondition":[
+  "Platform"
+ ],
+ "callsign":"org.rdk.System",
+ "autostart":false
+}
