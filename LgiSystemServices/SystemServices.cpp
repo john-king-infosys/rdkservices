@@ -26,6 +26,10 @@
 #include <utility>
 #include <sstream>
 #include <vector>
+#include <algorithm>
+
+#include "UtilsString.h"
+#include "UtilsJsonRpc.h"
 
 #define API_VERSION_NUMBER_MAJOR 1
 #define API_VERSION_NUMBER_MINOR 1
@@ -44,18 +48,18 @@
 // TODO: remove this
 #define registerMethod(...) for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Register<JsonObject, JsonObject>(__VA_ARGS__)
 
-template <typename T>
-class nano_optional
-{
-    public:
-    nano_optional<T>() : value(std::make_pair(false, T())){}
-    nano_optional<T>(T val) : value(std::make_pair(true, val)){}
-    bool has_value() {return value.first;}
-    T get() {return value.second;}
+// template <typename T>
+// class nano_optional
+// {
+//     public:
+//     nano_optional<T>() : value(std::make_pair(false, T())){}
+//     nano_optional<T>(T val) : value(std::make_pair(true, val)){}
+//     bool has_value() {return value.first;}
+//     T get() {return value.second;}
 
-    private:
-    std::pair<bool, T> value;
-};
+//     private:
+//     std::pair<bool, T> value;
+// };
 
 
 // std::optional<std::string> getDeviceInfoFromFile()
@@ -92,27 +96,33 @@ std::vector<std::string> splitLines(const std::string& s)
     return ret;
 }
 
-nano_optional<std::string> getDeviceInfoFromFile()
+std::vector<std::string> getDeviceInfoFromFile()
 {
+    std::vector<std::string> lines;
     std::ifstream ifs = std::ifstream(LGISYSTEMSERVICE_DEVICEINFO_FILENAME, std::ios_base::in);
     if (!ifs.is_open())
     {
-        return nano_optional<std::string>();
+        return lines;
     }
-    std::stringstream ret;
-    ret << ifs.rdbuf();
+
+    std::stringstream ss;
+    ss << ifs.rdbuf();
+    std::string line;
+    while (std::getline(ss, line, '\n')) 
+    {
+        lines.push_back(line);
+    }
 
     ifs.close();
-    return nano_optional<std::string>(ret.str());
+    return lines;
 }
 
-nano_optional<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
+std::vector<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
 {
     std::vector<std::string> lines;
     char** env = environ_;
     while (*env)
     {
-        //std::cout << *env << std::endl;
         std::string s(*env);
         env++;
         
@@ -123,6 +133,54 @@ nano_optional<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
         lines.push_back(s.substr(strlen(LGISYSTEMSERVICE_DEVICEINFO_ENVVAR_PREFIX)));
     }
 
+    return lines;
+}
+
+bool parseLine(const std::string& line, std::map<std::string, std::string>& map)
+{
+    size_t n = line.find_first_of("=");
+
+    std::string key = line.substr(0, n);
+    std::string val = line.substr(n + 1);
+
+    Utils::String::trim(key);
+    Utils::String::trim(val);
+
+    std::cout <<"***** " << key << " : " << val << std::endl;
+
+    if (val.empty()) // ????????????????
+    {
+        // value can not be empty
+        std::cout << "empty val\n";
+        return false;
+    }
+
+    if (key.empty())
+    {
+        //key can not be empty
+        std::cout << "empty key\n";
+        return false;
+    }
+
+    map[key] = val;
+
+    return true;
+}
+
+void populateDeviceInfo(std::map<std::string, std::string>& map)
+{
+    std::vector<std::string> lines = getDeviceInfoFromFile();
+    std::vector<std::string> envLines  = getDeviceInfoFromEnv();
+
+    lines.insert(lines.end(), envLines.begin(), envLines.end());
+
+    if (!map.empty())
+    {
+        map.clear();
+    }
+
+    std::for_each(lines.begin(), lines.end(), [&](const string& l){parseLine(l, map);});
+
     std::cout<<"$$$$\n";
 
     for (auto& s : lines)
@@ -131,32 +189,8 @@ nano_optional<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
     std::cout<<"****\n";
 
 
-    if(const char* env = std::getenv(LGISYSTEMSERVICE_DEVICEINFO_ENVVAR_PREFIX))
-    {
-        splitLines(env);
-        return nano_optional<std::string>(std::string(env));
-    }
-    else
-        return nano_optional<std::string>();
-}
-
-std::string getDeviceInfo()
-{
-    nano_optional<std::string> str = getDeviceInfoFromEnv();
-    if (str.has_value())
-    {
-        std::cout << str.get() << std::endl;
-        return str.get();
-    }
-
-    str = getDeviceInfoFromFile();
-    if (str.has_value())
-    {
-        std::cout << str.get() << std::endl;
-        return str.get();
-    }
-
-    return "";
+    for (auto& p : map)
+        std::cout << p.first << " : " << p.second << "\n";
 }
 
 
@@ -208,6 +242,8 @@ namespace WPEFramework {
 
             //JsonObject s;
             //s.get();
+            populateDeviceInfo(m_deviceInfo);
+
             return std::string();
         }
 
@@ -220,16 +256,16 @@ namespace WPEFramework {
         uint32_t SystemServices::getDeviceInfo(const JsonObject& parameters,
                 JsonObject& response)
         {
-            JsonObject o(::getDeviceInfo());
+            // JsonObject o(::getDeviceInfo());
 
-            std::cout<<"-------------\n";
+            // std::cout<<"-------------\n";
 
-            std::cout<<o["dupa"].String() << std::endl;
-            o["x"] = "ole";
-            o["y"] = "";
-            std::string s;
-            o.ToString(s);
-            std::cout<< s << std::endl;
+            // std::cout<<o["dupa"].String() << std::endl;
+            // o["x"] = "ole";
+            // o["y"] = "";
+            // std::string s;
+            // o.ToString(s);
+            // std::cout<< s << std::endl;
 
             return 0;
         }

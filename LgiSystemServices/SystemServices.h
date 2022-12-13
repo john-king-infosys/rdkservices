@@ -20,25 +20,27 @@
 #ifndef SYSTEMSERVICES_H
 #define SYSTEMSERVICES_H
 
+#include <map>
+
 #include "Module.h"
 #include "tracing/Logging.h"
 
-#/* System Services Triggered Events. */
-#define EVT_ONSYSTEMSAMPLEEVENT           "onSampleEvent"
-#define EVT_ONSYSTEMPOWERSTATECHANGED     "onSystemPowerStateChanged"
-#define EVT_ONSYSTEMMODECHANGED           "onSystemModeChanged"
-#define EVT_ONNETWORKSTANDBYMODECHANGED   "onNetworkStandbyModeChanged"
-#define EVT_ONFIRMWAREUPDATEINFORECEIVED  "onFirmwareUpdateInfoReceived"
-#define EVT_ONFIRMWAREUPDATESTATECHANGED  "onFirmwareUpdateStateChange"
-#define EVT_ONTEMPERATURETHRESHOLDCHANGED "onTemperatureThresholdChanged"
-#define EVT_ONMACADDRESSRETRIEVED         "onMacAddressesRetreived"
-#define EVT_ONREBOOTREQUEST               "onRebootRequest"
-#define EVT_ON_SYSTEM_CLOCK_SET           "onSystemClockSet"
-#define EVT_ONFWPENDINGREBOOT             "onFirmwarePendingReboot" /* Auto Reboot notifier */
-#define EVT_ONREBOOTREQUEST               "onRebootRequest"
-#define EVT_ONTERRITORYCHANGED            "onTerritoryChanged"
-#define EVT_ONTIMEZONEDSTCHANGED          "onTimeZoneDSTChanged"
-#define TERRITORYFILE                     "/opt/secure/persistent/System/Territory.txt"
+/* System Services Triggered Events. */
+// #define EVT_ONSYSTEMSAMPLEEVENT           "onSampleEvent"
+// #define EVT_ONSYSTEMPOWERSTATECHANGED     "onSystemPowerStateChanged"
+// #define EVT_ONSYSTEMMODECHANGED           "onSystemModeChanged"
+// #define EVT_ONNETWORKSTANDBYMODECHANGED   "onNetworkStandbyModeChanged"
+// #define EVT_ONFIRMWAREUPDATEINFORECEIVED  "onFirmwareUpdateInfoReceived"
+// #define EVT_ONFIRMWAREUPDATESTATECHANGED  "onFirmwareUpdateStateChange"
+// #define EVT_ONTEMPERATURETHRESHOLDCHANGED "onTemperatureThresholdChanged"
+// #define EVT_ONMACADDRESSRETRIEVED         "onMacAddressesRetreived"
+// #define EVT_ONREBOOTREQUEST               "onRebootRequest"
+// #define EVT_ON_SYSTEM_CLOCK_SET           "onSystemClockSet"
+// #define EVT_ONFWPENDINGREBOOT             "onFirmwarePendingReboot" /* Auto Reboot notifier */
+// #define EVT_ONREBOOTREQUEST               "onRebootRequest"
+// #define EVT_ONTERRITORYCHANGED            "onTerritoryChanged"
+// #define EVT_ONTIMEZONEDSTCHANGED          "onTimeZoneDSTChanged"
+// #define TERRITORYFILE                     "/opt/secure/persistent/System/Territory.txt"
 
 namespace WPEFramework {
     namespace Plugin {
@@ -90,8 +92,10 @@ namespace WPEFramework {
             uint32_t getDeviceInfo(const JsonObject& parameters, JsonObject& response);
 
         private:
+            std::map<std::string, std::string> m_deviceInfo;
+
             //static SystemServices* _instance;
-            
+
         }; /* end of system service class */
     } /* end of plugin */
 } /* end of wpeframework */
