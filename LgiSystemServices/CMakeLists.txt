@@ -22,71 +22,18 @@ set(PLUGIN_SYSTEMSERVICE_STARTUPORDER "" CACHE STRING "To configure startup orde
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
-if(BUILD_TESTS)
-    add_subdirectory(TestClient)
-endif()
-
 add_library(${MODULE_NAME} SHARED
         SystemServices.cpp
         Module.cpp
-        cTimer.cpp
-        thermonitor.cpp
-        SystemServicesHelper.cpp
-        uploadlogs.cpp
-        platformcaps/platformcaps.cpp
-        platformcaps/platformcapsdata.cpp
-        platformcaps/platformcapsdatarpc.cpp
         )
-set_source_files_properties(SystemServices.cpp thermonitor.cpp platformcaps/platformcapsdata.cpp PROPERTIES COMPILE_FLAGS "-fexceptions")
+
 set_target_properties(${MODULE_NAME} PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED YES)
 
 target_compile_definitions(${MODULE_NAME} PRIVATE MODULE_NAME=Plugin_${PLUGIN_NAME})
-target_compile_options(${MODULE_NAME} PRIVATE -Wno-error)
 
-list(APPEND CMAKE_MODULE_PATH
-        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
-
-find_package(IARMBus)
-if (IARMBus_FOUND)
-    target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS})
-    target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES})
-else (IARMBus_FOUND)
-    message ("Module IARMBus required.")
-    target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS})
-    target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES})
-endif(IARMBus_FOUND)
-
-find_package(DS)
-if (DS_FOUND)
-	find_package(IARMBus)
-    add_definitions(-DDS_FOUND)
-    target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS})
-    target_include_directories(${MODULE_NAME} PRIVATE ${DS_INCLUDE_DIRS})
-    target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES} ${DS_LIBRARIES})
-else (DS_FOUND)
-    target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
-endif(DS_FOUND)
-
-find_package(CURL)
-if (CURL_FOUND)
-	include_directories(${CURL_INCLUDE_DIRS})
-	target_link_libraries(${MODULE_NAME} PRIVATE ${CURL_LIBRARIES})
-else (CURL_FOUND)
-	message ("Curl/libcurl required.")
-endif (CURL_FOUND)
-
-find_package(RFC)
-if (RFC_FOUND)
-	target_include_directories(${MODULE_NAME} PRIVATE ${RFC_INCLUDE_DIRS})
-	target_link_libraries(${MODULE_NAME} PRIVATE ${RFC_LIBRARIES})
-else (RFC_FOUND)
-	message ("RFC lib required.")
-endif (RFC_FOUND)
-
-target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
-target_include_directories(${MODULE_NAME} PRIVATE ./)
+target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins )
 
 install(TARGETS ${MODULE_NAME}
         DESTINATION lib/${STORAGE_DIRECTORY}/plugins)
