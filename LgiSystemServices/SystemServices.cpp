@@ -16,12 +16,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **/
-
 #include "SystemServices.h"
 
 #include <fstream>
 #include <iostream>
-//#include <optional>
 #include <cstdlib>
 #include <utility>
 #include <sstream>
@@ -36,88 +34,37 @@
 #define API_VERSION_NUMBER_PATCH 5
 
 #ifndef LGISYSTEMSERVICE_DEVICEINFO_FILENAME
-#define LGISYSTEMSERVICE_DEVICEINFO_FILENAME "/tmp/device.info"
+#define LGISYSTEMSERVICE_DEVICEINFO_FILENAME "/etc/WPEFramework/device.info"
 #endif
 
 #ifndef LGISYSTEMSERVICE_DEVICEINFO_ENVVAR_PREFIX
-#define LGISYSTEMSERVICE_DEVICEINFO_ENVVAR_PREFIX "LGISYSTEMSERVICE_DEVICEINFO_"
+#define LGISYSTEMSERVICE_DEVICEINFO_ENVVAR_PREFIX "RDK_ENV_"
 #endif
 
-
-
-// TODO: remove this
-#define registerMethod(...) for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Register<JsonObject, JsonObject>(__VA_ARGS__)
-
-// template <typename T>
-// class nano_optional
-// {
-//     public:
-//     nano_optional<T>() : value(std::make_pair(false, T())){}
-//     nano_optional<T>(T val) : value(std::make_pair(true, val)){}
-//     bool has_value() {return value.first;}
-//     T get() {return value.second;}
-
-//     private:
-//     std::pair<bool, T> value;
-// };
-
-
-// std::optional<std::string> getDeviceInfoFromFile()
-// {
-//     std::ifstream ifs = std::ifstream(LGISYSTEMSERVICE_DEVICEINFO_FILENAME, std::ios_base::in);
-//     if (!ifs.is_open())
-//     {
-//         return std::nullopt;
-//     }
-//     std::string ret;
-//     ifs >> ret;
-//     ifs.close();
-//     return ret;
-// }
-
-// std::optional<std::string> getDeviceInfoFromEnv()
-// {
-//     if(const char* env = std::getenv(LGISYSTEMSERVICE_DEVICEINFO_ENVVAR))
-//         return std::string(env);
-//     else
-//         return std::nullopt;
-// }
-
-std::vector<std::string> splitLines(const std::string& s)
-{
-    std::vector<std::string> ret;
-    std::stringstream ss(s);
-    std::string line;
-    while (std::getline(ss, line, '\n')) 
-    {
-        std::cout <<"line: " << line << std::endl;
-        ret.push_back(line);
-    }
-    return ret;
-}
-
-std::vector<std::string> getDeviceInfoFromFile()
+static std::vector<std::string> getDeviceInfoFromFile()
 {
     std::vector<std::string> lines;
     std::ifstream ifs = std::ifstream(LGISYSTEMSERVICE_DEVICEINFO_FILENAME, std::ios_base::in);
     if (!ifs.is_open())
     {
+        LOGWARN("could not read data file: %s", LGISYSTEMSERVICE_DEVICEINFO_FILENAME);
         return lines;
     }
 
     std::stringstream ss;
     ss << ifs.rdbuf();
+    ifs.close();
+
     std::string line;
     while (std::getline(ss, line, '\n')) 
     {
         lines.push_back(line);
     }
-
-    ifs.close();
+    
     return lines;
 }
 
-std::vector<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
+static std::vector<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
 {
     std::vector<std::string> lines;
     char** env = environ_;
@@ -136,9 +83,15 @@ std::vector<std::string> getDeviceInfoFromEnv(char** environ_ = environ)
     return lines;
 }
 
-bool parseLine(const std::string& line, std::map<std::string, std::string>& map)
+static bool parseLine(const std::string& line, std::map<std::string, std::string>& map)
 {
     size_t n = line.find_first_of("=");
+
+    if (n == std::string::npos)
+    {
+        LOGERR("no '=' found in: %s", line.c_str());
+        return false;
+    }
 
     std::string key = line.substr(0, n);
     std::string val = line.substr(n + 1);
@@ -146,19 +99,14 @@ bool parseLine(const std::string& line, std::map<std::string, std::string>& map)
     Utils::String::trim(key);
     Utils::String::trim(val);
 
-    std::cout <<"***** " << key << " : " << val << std::endl;
-
-    if (val.empty()) // ????????????????
+    if (val.empty())
     {
-        // value can not be empty
-        std::cout << "empty val\n";
-        return false;
+        LOGWARN("found empty value in: %s", line.c_str());
     }
 
     if (key.empty())
     {
-        //key can not be empty
-        std::cout << "empty key\n";
+        LOGERR("empty key is forbidden: %s", line.c_str());
         return false;
     }
 
@@ -167,30 +115,14 @@ bool parseLine(const std::string& line, std::map<std::string, std::string>& map)
     return true;
 }
 
-void populateDeviceInfo(std::map<std::string, std::string>& map)
+static void populateDeviceInfo(std::map<std::string, std::string>& map)
 {
     std::vector<std::string> lines = getDeviceInfoFromFile();
     std::vector<std::string> envLines  = getDeviceInfoFromEnv();
-
     lines.insert(lines.end(), envLines.begin(), envLines.end());
 
-    if (!map.empty())
-    {
-        map.clear();
-    }
-
+    map.clear();
     std::for_each(lines.begin(), lines.end(), [&](const string& l){parseLine(l, map);});
-
-    std::cout<<"$$$$\n";
-
-    for (auto& s : lines)
-        std::cout << s << std::endl;
-
-    std::cout<<"****\n";
-
-
-    for (auto& p : map)
-        std::cout << p.first << " : " << p.second << "\n";
 }
 
 
@@ -216,58 +148,71 @@ namespace WPEFramework {
     namespace Plugin {
         SERVICE_REGISTRATION(SystemServices, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
 
-        //SystemServices* SystemServices::_instance = nullptr;
-
         /**
          * Register SystemService module as wpeframework plugin
          */
         SystemServices::SystemServices()
             : PluginHost::JSONRPC()
         {
-            //SystemServices::_instance = this;
-
-            CreateHandler({2});
-            registerMethod("getDeviceInfo", &SystemServices::getDeviceInfo, this);
-
+            Register("getDeviceInfo", &SystemServices::getDeviceInfo, this);
         }
 
 
         SystemServices::~SystemServices()
         {
-
         }
 
         const string SystemServices::Initialize(PluginHost::IShell* service)
-        {
-
-            //JsonObject s;
-            //s.get();
+        {            
             populateDeviceInfo(m_deviceInfo);
+            
+            LOGINFO("Device info includes %zu items:", m_deviceInfo.size());
+            for (const auto& p : m_deviceInfo)
+                LOGINFO("'%s' : '%s'", p.first.c_str(), p.second.c_str());
 
             return std::string();
         }
 
         void SystemServices::Deinitialize(PluginHost::IShell*)
         {
-            //SystemServices::_instance = nullptr;
         }
 
 
         uint32_t SystemServices::getDeviceInfo(const JsonObject& parameters,
                 JsonObject& response)
         {
-            // JsonObject o(::getDeviceInfo());
+            constexpr const char* ERRMSG = "message";
 
-            // std::cout<<"-------------\n";
+            if (!parameters.HasLabel("params") //there is no list of keys
+                || parameters["params"].Content() != WPEFramework::Core::JSON::Variant::type::ARRAY //keys list is not a list
+                || !parameters["params"].Array().IsSet()) //keys list is a list, but is empty
+            {
+                LOGINFO("Keys list is empty - sending full map");
+                std::for_each(m_deviceInfo.begin(), m_deviceInfo.end(),
+                    [&](const std::pair<std::string, std::string>& p){response[p.first.c_str()] = p.second;});
+                returnResponse(true);    
+            }
 
-            // std::cout<<o["dupa"].String() << std::endl;
-            // o["x"] = "ole";
-            // o["y"] = "";
-            // std::string s;
-            // o.ToString(s);
-            // std::cout<< s << std::endl;
+            const auto& keys = parameters["params"].Array();
+            for (int i = 0; i < keys.Length(); i++)
+            {
+                if (keys[i].Content() != WPEFramework::Core::JSON::Variant::type::STRING)
+                {
+                    response[ERRMSG] = "no 'string' type parameter is not allowed: " + keys[i].String();
+                    returnResponse(false);
+                }
 
-            return 0;
+                auto e = m_deviceInfo.find(keys[i].String());
+                if (e == m_deviceInfo.end())
+                {
+                    response[ERRMSG] = "no requested key in data: " + keys[i].String();
+                    returnResponse(false);
+                }
+
+                response[e->first.c_str()] = e->second; 
+            }
+
+            returnResponse(true);
         }
     }
 }

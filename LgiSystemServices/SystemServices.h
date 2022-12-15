@@ -87,14 +87,10 @@ namespace WPEFramework {
             INTERFACE_ENTRY(PluginHost::IDispatcher)
             END_INTERFACE_MAP
 
-
-
             uint32_t getDeviceInfo(const JsonObject& parameters, JsonObject& response);
 
         private:
             std::map<std::string, std::string> m_deviceInfo;
-
-            //static SystemServices* _instance;
 
         }; /* end of system service class */
     } /* end of plugin */
