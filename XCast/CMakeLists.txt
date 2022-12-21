@@ -22,7 +22,6 @@ set(PLUGIN_XCAST_AUTOSTART "false" CACHE STRING "Automatically start XCast plugi
 set(PLUGIN_XCAST_STARTUPORDER "" CACHE STRING "To configure startup order of XCast plugin")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
-find_package(${NAMESPACE}SecurityUtil REQUIRED)
 
 add_library(${MODULE_NAME} SHARED
         XCast.cpp
@@ -31,6 +30,7 @@ add_library(${MODULE_NAME} SHARED
         XCastSystemRemoteObject.cpp
         ../helpers/powerstate.cpp)
 
+find_package(RFC)
 find_package(IARMBus)
 set_target_properties(${MODULE_NAME} PROPERTIES
         CXX_STANDARD 11
@@ -40,6 +40,7 @@ target_compile_definitions(${MODULE_NAME} PRIVATE MODULE_NAME=Plugin_${PLUGIN_NA
 
 add_definitions (-DRT_PLATFORM_LINUX)
 target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS} ../helpers)
+target_include_directories(${MODULE_NAME} PRIVATE ${RFC_INCLUDE_DIRS} ../helpers)
 target_include_directories(${MODULE_NAME} PRIVATE $ENV{PKG_CONFIG_SYSROOT_DIR}/usr/include/pxcore)
 
 if(NOT RDK_SERVICES_TEST)
