@@ -170,7 +170,6 @@ rtError RtXcastConnector::onApplicationStateRequestCallback(int numArgs, const r
     
     return RT_OK;
 }
-
 /**
  * Callback function for application resume request from an app
  */
@@ -226,8 +225,7 @@ int RtXcastConnector::connectToRemoteService()
     const char * serviceName = "com.comcast.xdialcast";
     
     LOGINFO("connectToRemoteService entry " );
-    const int timeout = 0;
-    err = rtRemoteLocateObject(rtEnvironmentGetGlobal(), serviceName, xdialCastObj, timeout, &RtXcastConnector::remoteDisconnectCallback, m_observer);
+    err = rtRemoteLocateObject(rtEnvironmentGetGlobal(), serviceName, xdialCastObj, 0, &RtXcastConnector::remoteDisconnectCallback, m_observer);
     if(err == RT_OK && xdialCastObj != NULL)
     {
         rtError e = xdialCastObj.send("on", "onApplicationLaunchRequest" , new rtFunctionCallback(RtXcastConnector::onApplicationLaunchRequestCallback, m_observer));
@@ -267,16 +265,10 @@ bool RtXcastConnector::initialize()
         m_runEventThread = true;
         m_eventMtrThread = std::thread(threadRun, this);
     }
-
-    m_xcast_system_remote_object->registerRemoteObject(env);
     return (err == RT_OK) ? true:false;
 }
 void RtXcastConnector::shutdown()
 {
-    m_xcast_system_remote_object->unregisterRemoteObject(rtEnvironmentGetGlobal());
-
-    rtRemoteShutdown(rtEnvironmentGetGlobal());
-
     LOGINFO("Shutting down rtRemote connectivity");
     {
         lock_guard<mutex> lock(m_threadlock);
@@ -285,6 +277,7 @@ void RtXcastConnector::shutdown()
     if (m_eventMtrThread.joinable())
         m_eventMtrThread.join();    
 
+    rtRemoteShutdown(rtEnvironmentGetGlobal());
     if(RtXcastConnector::_instance != nullptr)
     {
         delete RtXcastConnector::_instance;
