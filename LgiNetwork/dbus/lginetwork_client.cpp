@@ -13,7 +13,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include "lginetwork_client.hpp"
-#include "../utils.h"
+#include "UtilsLogging.h"
 
 namespace lginet
 {

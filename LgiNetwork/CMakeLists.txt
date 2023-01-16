@@ -18,11 +18,12 @@
 set(PLUGIN_NAME Network)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
+set(PLUGIN_NETWORK_STARTUPORDER "" CACHE STRING "To configure startup order of Network plugin")
+
 find_package(${NAMESPACE}Plugins REQUIRED)
 find_package(${NAMESPACE}Definitions REQUIRED)
 find_package(LibGlib REQUIRED)
 find_package(LibGio REQUIRED)
-find_package(DS)
 
 find_path(LIBGIOUNIX_INCLUDE_DIR
           NAMES gio/gunixfdlist.h
@@ -40,7 +41,6 @@ add_library(${MODULE_NAME} SHARED
         Module.cpp
         dbus/lginetwork_client.cpp
         dbus/lginetwork_dbus_api.c
-        utils.cpp
         )
 
 set_target_properties(${MODULE_NAME} PROPERTIES
@@ -51,12 +51,12 @@ add_definitions (-DNET_DEFINED_INTERFACES_ONLY)
 
 include_directories(${LIBGLIB_INCLUDE_DIRS})
 include_directories(${LIBGIO_INCLUDE_DIRS})
+target_include_directories(${MODULE_NAME} PRIVATE ../helpers)
 
 target_link_libraries(${MODULE_NAME}
         PRIVATE
                 ${NAMESPACE}Plugins::${NAMESPACE}Plugins
                 ${NAMESPACE}Definitions::${NAMESPACE}Definitions
-                ${IARMBUS_LIBRARIES}
                 ${LIBGIO_LIBRARIES}
                 ${LIBGLIB_LIBRARIES})
 
