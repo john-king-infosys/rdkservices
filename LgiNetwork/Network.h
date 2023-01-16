@@ -33,7 +33,6 @@
 namespace WPEFramework {
     namespace Plugin {
 
-
         // This is a server for a JSONRPC communication channel.
         // For a plugin to be capable to handle JSONRPC, inherit from PluginHost::JSONRPC.
         // By inheriting from this class, the plugin realizes the interface PluginHost::IDispatcher.

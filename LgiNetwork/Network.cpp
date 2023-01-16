@@ -22,6 +22,9 @@
 #include <arpa/inet.h>
 #include "dbus/lginetwork_client.hpp"
 
+#include "UtilsJsonRpc.h"
+#include "UtilsLogging.h"
+
 using namespace std;
 
 #define DEFAULT_PING_PACKETS 15
@@ -375,7 +378,7 @@ namespace WPEFramework
             else if (iface != "ETHERNET")
             {
                 // neither ethernet nor wifi, play dumb and assume someone passed physical name
-                LOGDBG("unexpected interface name (%s), passing as-is in good faith", iface.c_str());
+                LOGINFO("unexpected interface name (%s), passing as-is in good faith", iface.c_str());
                 return iface;
             }
 
@@ -814,7 +817,7 @@ namespace WPEFramework
         {
             if (Network::_instance)
             {
-                LOGDBG("StatusChangeEvent entry id=%s status=%s", id.c_str(), status.c_str());
+                LOGINFO("StatusChangeEvent entry id=%s status=%s", id.c_str(), status.c_str());
                 if (status == "Disconnected")
                     Network::_instance->onInterfaceConnectionStatusChanged(id, false);
                 else if (status == "Assigned")
@@ -823,7 +826,7 @@ namespace WPEFramework
                     Network::_instance->onInterfaceEnabledStatusChanged(id, false);
                 else if (status == "Dormant")
                     Network::_instance->onInterfaceIPAddressChanged(id, "", "", false);
-                LOGDBG("StatusChangeEvent exit");
+                LOGINFO("StatusChangeEvent exit");
             }
         }
 
@@ -835,7 +838,7 @@ namespace WPEFramework
 
         void Network::onNetworkingEvent(const string id, const string event, const std::map<string, string> params)
         {
-            LOGDBG("onNetworkingEvent entry id=%s event=%s", id.c_str(), event.c_str());
+            LOGINFO("onNetworkingEvent entry id=%s event=%s", id.c_str(), event.c_str());
             if (event == "dhcp4.options")
             {
                 auto iter = params.find("ip");
@@ -887,7 +890,7 @@ namespace WPEFramework
                     }
                 }
             }
-            LOGDBG("onNetworkingEvent exit");
+            LOGINFO("onNetworkingEvent exit");
         }
 
         void Network::onInterfaceConnectionStatusChanged(string interface, bool connected)
@@ -979,7 +982,7 @@ namespace WPEFramework
                 }
 
                 if (result)
-                    LOGDBG("Evaluated default network interface: '%s' and gateway: '%s'", interface.c_str(), gateway.c_str());
+                    LOGINFO("Evaluated default network interface: '%s' and gateway: '%s'", interface.c_str(), gateway.c_str());
                 else
                     LOGWARN("Unable to detect default network interface");
             }
