@@ -62,6 +62,8 @@ LgiNetworkClient::LgiNetworkClient()
 
 LgiNetworkClient::~LgiNetworkClient()
 {
+    if (m_interface)
+        Stop();
     LOGINFO("user_data: %p", this);
 }
 
@@ -132,13 +134,13 @@ bool LgiNetworkClient::getParamsForInterface(const std::string iface, std::vecto
         gchar*          key;
         gchar*          value;
 
-        g_variant_iter_init(&iter, out_params);
-        while (g_variant_iter_loop (&iter, "{ss}", &key, &value))
-        {
-            params.push_back(make_pair(std::string(key), std::string(value)));
-        }
         if (out_params)
         {
+            g_variant_iter_init(&iter, out_params);
+            while (g_variant_iter_loop (&iter, "{ss}", &key, &value))
+            {
+                params.push_back(make_pair(std::string(key), std::string(value)));
+            }
             g_variant_unref(out_params);
         }
 
@@ -167,23 +169,27 @@ bool LgiNetworkClient::getSpecificParamsForInterface(const std::string iface, st
         {
             LOGERR("interface %s doesn't exist", iface.c_str());
             if (out_params)
-            {
                 g_variant_unref(out_params);
-            }
             return false;
         }
         GVariantIter    iter;
         gchar*          key;
         gchar*          value;
 
-        g_variant_iter_init(&iter, out_params);
-        while (g_variant_iter_loop (&iter, "{ss}", &key, &value))
+        if (out_params)
         {
-            std::string skey(key);
-            auto iter = params.find(skey);
-            if (iter != params.end())
-                iter->second = string(value);
+            g_variant_iter_init(&iter, out_params);
+            while (g_variant_iter_loop (&iter, "{ss}", &key, &value))
+            {
+                std::string skey(key);
+                auto iter = params.find(skey);
+                if (iter != params.end())
+                    iter->second = string(value);
+            }
+
+            g_variant_unref(out_params);
         }
+
         return true;
     }
     else
@@ -272,7 +278,7 @@ void LgiNetworkClient::onHandleNetworkingEvent(LgiNetworkClient*  aNetworkConfig
 void LgiNetworkClient::onHandleIpv4ConfigurationChanged(LgiNetworkClient*  aNetworkConfigProxy,
                                         const gchar*    aId)
 {
-    // nothing yet,
+    // nothing yet.
 }
 
 void LgiNetworkClient::onHandleStatusChanged(LgiNetworkClient*  aNetworkConfigProxy,
@@ -311,5 +317,18 @@ int LgiNetworkClient::Run()
 
     return 0;
 }
+
+void LgiNetworkClient::Stop()
+{
+    if (m_interface)
+    {
+        disconnectAllSignals();
+        g_object_unref(m_interface);
+        m_interface = nullptr;
+        LOGINFO("signals disconnected");
+    }
+}
+
+
 } // namespace lginet
 

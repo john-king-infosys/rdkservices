@@ -118,6 +118,7 @@ namespace WPEFramework
 
         void Network::Deinitialize(PluginHost::IShell* /* service */)
         {
+            m_NetworkClient.Stop();
             m_isPluginInited = false;
             Unregister("getQuirks");
             Unregister("getInterfaces");
@@ -137,7 +138,6 @@ namespace WPEFramework
             Unregister("setConnectivityTestEndpoints");
             Unregister("getPublicIP");
             Unregister("setStunEndPoint");
-
             Network::_instance = nullptr;
         }
 

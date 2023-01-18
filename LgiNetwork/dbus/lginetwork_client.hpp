@@ -73,6 +73,7 @@ public:
     LgiNetworkClient(const LgiNetworkClient&&) = delete;
     LgiNetworkClient& operator=(LgiNetworkClient const&&) = delete;
     int Run();
+    void Stop();
 
     std::vector<std::string>* getInterfaces();
     bool getParamsForInterface(const std::string iface, std::vector<std::pair<std::string, std::string>>& params);
