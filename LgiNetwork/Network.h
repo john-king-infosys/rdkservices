@@ -21,6 +21,7 @@
 
 #include <cjson/cJSON.h>
 #include <string>
+#include <atomic>
 
 #include "Module.h"
 #include "NetUtils.h"
@@ -72,7 +73,9 @@ namespace WPEFramework {
             uint32_t ping(const JsonObject& parameters, JsonObject& response);
             uint32_t pingNamedEndpoint(const JsonObject& parameters, JsonObject& response);
             uint32_t setIPSettings(const JsonObject& parameters, JsonObject& response);
+            uint32_t setIPSettings2(const JsonObject& parameters, JsonObject& response);
             uint32_t getIPSettings(const JsonObject& parameters, JsonObject& response);
+            uint32_t getIPSettings2(const JsonObject& parameters, JsonObject& response);
             uint32_t getSTBIPFamily(const JsonObject& parameters, JsonObject& response);
             uint32_t isConnectedToInternet(const JsonObject& parameters, JsonObject& response);
             uint32_t setConnectivityTestEndpoints(const JsonObject& parameters, JsonObject& response);
@@ -97,6 +100,7 @@ namespace WPEFramework {
 
             JsonObject _doPing(const std::string& guid, const std::string& endPoint, int packets);
             JsonObject _doPingNamedEndpoint(const std::string& guid, const std::string& endpointName, int packets);
+            uint32_t setIPSettingsInternal(const JsonObject& parameters, JsonObject& response);
 
             std::string convertIfaceName(const std::string iface);
             static void StatusChangeEvent(const std::string id, const std::string status);
@@ -136,6 +140,7 @@ namespace WPEFramework {
             uint16_t m_stunBindTimeout;
             uint16_t m_stunCacheTimeout;
             bool m_stunSync;
+            uint32_t m_apiVersionNumber;
             bool m_dhcpEventSeen;
         };
     } // namespace Plugin

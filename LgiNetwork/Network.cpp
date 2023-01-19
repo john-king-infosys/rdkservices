@@ -30,6 +30,10 @@ using namespace std;
 #define DEFAULT_PING_PACKETS 15
 #define CIDR_NETMASK_IP_LEN 32
 
+#define API_VERSION_NUMBER_MAJOR 1
+#define API_VERSION_NUMBER_MINOR 0
+#define API_VERSION_NUMBER_PATCH 2
+
 /* Netsrvmgr Based Macros & Structures */
 #define INTERFACE_SIZE 10
 #define INTERFACE_LIST 50
@@ -39,47 +43,71 @@ using namespace std;
 #define MAX_ENDPOINTS 5
 #define MAX_ENDPOINT_SIZE 260 // 253 + 1 + 5 + 1 (domain name max length + ':' + port number max chars + '\0')
 
+// TODO: remove this
+#define registerMethod(...) for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Register<JsonObject, JsonObject>(__VA_ARGS__)
+
 namespace WPEFramework
 {
+
+    namespace {
+
+        static Plugin::Metadata<Plugin::Network> metadata(
+            // Version (Major, Minor, Patch)
+            API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH,
+            // Preconditions
+            {},
+            // Terminations
+            {},
+            // Controls
+            {}
+        );
+    }
+
     namespace Plugin
     {
-        SERVICE_REGISTRATION(Network, 1, 0);
+        SERVICE_REGISTRATION(Network, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
         Network* Network::_instance = nullptr;
 
-        Network::Network() : PluginHost::JSONRPC()
+        Network::Network()
+        : PluginHost::JSONRPC()
+        , m_apiVersionNumber(API_VERSION_NUMBER_MAJOR)
         {
             Network::_instance = this;
             m_isPluginInited = false;
 
+            CreateHandler({2});
+
             // Quirk
-            Register("getQuirks", &Network::getQuirks, this);
+            registerMethod("getQuirks", &Network::getQuirks, this);
 
             // Network_API_Version_1
-            Register("getInterfaces", &Network::getInterfaces, this);
-            Register("isInterfaceEnabled", &Network::isInterfaceEnabled, this);
-            Register("setInterfaceEnabled", &Network::setInterfaceEnabled, this);
-            Register("getDefaultInterface", &Network::getDefaultInterface, this);
-            Register("setDefaultInterface", &Network::setDefaultInterface, this);
+            registerMethod("getInterfaces", &Network::getInterfaces, this);
+            registerMethod("isInterfaceEnabled", &Network::isInterfaceEnabled, this);
+            registerMethod("setInterfaceEnabled", &Network::setInterfaceEnabled, this);
+            registerMethod("getDefaultInterface", &Network::getDefaultInterface, this);
+            registerMethod("setDefaultInterface", &Network::setDefaultInterface, this);
 
-            Register("getStbIp", &Network::getStbIp, this);
+            registerMethod("getStbIp", &Network::getStbIp, this);
 
-            Register("trace", &Network::trace, this);
-            Register("traceNamedEndpoint", &Network::traceNamedEndpoint, this);
+            registerMethod("trace", &Network::trace, this);
+            registerMethod("traceNamedEndpoint", &Network::traceNamedEndpoint, this);
 
-            Register("getNamedEndpoints", &Network::getNamedEndpoints, this);
+            registerMethod("getNamedEndpoints", &Network::getNamedEndpoints, this);
 
-            Register("ping",              &Network::ping, this);
-            Register("pingNamedEndpoint", &Network::pingNamedEndpoint, this);
+            registerMethod("ping",              &Network::ping, this);
+            registerMethod("pingNamedEndpoint", &Network::pingNamedEndpoint, this);
 
             Register("setIPSettings", &Network::setIPSettings, this);
+            GetHandler(2)->Register<JsonObject, JsonObject>("setIPSettings", &Network::setIPSettings2, this);
             Register("getIPSettings", &Network::getIPSettings, this);
+            GetHandler(2)->Register<JsonObject, JsonObject>("getIPSettings", &Network::getIPSettings2, this);
 
-            Register("getSTBIPFamily", &Network::getSTBIPFamily, this);
-            Register("isConnectedToInternet", &Network::isConnectedToInternet, this);
-            Register("setConnectivityTestEndpoints", &Network::setConnectivityTestEndpoints, this);
+            registerMethod("getSTBIPFamily", &Network::getSTBIPFamily, this);
+            registerMethod("isConnectedToInternet", &Network::isConnectedToInternet, this);
+            registerMethod("setConnectivityTestEndpoints", &Network::setConnectivityTestEndpoints, this);
 
-            Register("getPublicIP", &Network::getPublicIP, this);
-            Register("setStunEndPoint", &Network::setStunEndPoint, this);
+            registerMethod("getPublicIP", &Network::getPublicIP, this);
+            registerMethod("setStunEndPoint", &Network::setStunEndPoint, this);
 
             m_defaultInterface = "";
             m_gatewayInterface = "";
@@ -94,6 +122,7 @@ namespace WPEFramework
 
         Network::~Network()
         {
+            LOGINFO("destructor %s", __FUNCTION__);
         }
 
         const string Network::Initialize(PluginHost::IShell* /* service */)
@@ -113,13 +142,14 @@ namespace WPEFramework
                 m_NetworkClient.onNetworkingEvent = NetworkingEvent;
                 LOGINFO("Succeeded initializing LGI DBus Network Client");
             }
+
             return msg;
         }
 
         void Network::Deinitialize(PluginHost::IShell* /* service */)
         {
-            m_NetworkClient.Stop();
             m_isPluginInited = false;
+            m_NetworkClient.Stop();
             Unregister("getQuirks");
             Unregister("getInterfaces");
             Unregister("isInterfaceEnabled");
@@ -138,6 +168,7 @@ namespace WPEFramework
             Unregister("setConnectivityTestEndpoints");
             Unregister("getPublicIP");
             Unregister("setStunEndPoint");
+
             Network::_instance = nullptr;
         }
 
@@ -580,19 +611,67 @@ namespace WPEFramework
             bool result = false;
 
             if (m_isPluginInited)
+                return  setIPSettingsInternal(parameters, response);
+            else
+                LOGWARN ("Network plugin not initialised yet returning from %s", __FUNCTION__);
+
+            returnResponse(result)
+        }
+
+        uint32_t Network::setIPSettings2(const JsonObject& parameters, JsonObject& response)
+        {
+            JsonObject internal;
+            string interface = "";
+            string ipversion = "";
+            string netmask = "";
+            string gateway = "";
+            string ipaddr = "";
+            string primarydns = "";
+            string secondarydns = "";
+            bool autoconfig = true;
+            bool result = false;
+
+            if(m_isPluginInited)
             {
-                if ((parameters.HasLabel("interface")) && (parameters.HasLabel("ipversion")) && (parameters.HasLabel("autoconfig")) &&
-                        (parameters.HasLabel("ipaddr")) && (parameters.HasLabel("netmask")) && (parameters.HasLabel("gateway")) &&
-                        (parameters.HasLabel("primarydns")) && (parameters.HasLabel("secondarydns")))
-                {
-                    // TODO:
-                    response["supported"] = false;
-                    LOGERR("Call %s not implemeNted\n", __FUNCTION__);
-                }
+                getDefaultStringParameter("interface", interface, "");
+                internal ["interface"] = interface;
+                getDefaultStringParameter("ipversion", ipversion, "");
+                internal ["ipversion"] = ipversion;
+                getDefaultBoolParameter("autoconfig", autoconfig, true);
+                internal ["autoconfig"] = autoconfig;
+                getDefaultStringParameter("ipaddr", ipaddr, "");
+                internal ["ipaddr"] = ipaddr;
+                getDefaultStringParameter("netmask", netmask, "");
+                internal ["netmask"] = netmask;
+                getDefaultStringParameter("gateway", gateway, "");
+                internal ["gateway"] = gateway;
+                getDefaultStringParameter("primarydns", primarydns, "0.0.0.0");
+                internal ["primarydns"] = primarydns;
+                getDefaultStringParameter("secondarydns", secondarydns, "");
+                internal ["secondarydns"] = secondarydns;
+
+                return  setIPSettingsInternal(internal, response);
             }
             else
             {
                 LOGWARN ("Network plugin not initialised yet returning from %s", __FUNCTION__);
+            }
+            returnResponse(result)
+        }
+
+        uint32_t Network::setIPSettingsInternal(const JsonObject& parameters, JsonObject& response)
+        {
+            bool result = false;
+            struct in_addr ip_address, gateway_address, mask;
+            struct in_addr broadcast_addr1, broadcast_addr2;
+
+            if ((parameters.HasLabel("interface")) && (parameters.HasLabel("ipversion")) && (parameters.HasLabel("autoconfig")) &&
+                (parameters.HasLabel("ipaddr")) && (parameters.HasLabel("netmask")) && (parameters.HasLabel("gateway")) &&
+                (parameters.HasLabel("primarydns")) && (parameters.HasLabel("secondarydns")))
+            {
+                response["supported"] = false;
+                result = false;
+                LOGERR("Call to %s not implemented.", __FUNCTION__);
             }
 
             returnResponse(result)
@@ -671,6 +750,15 @@ namespace WPEFramework
             }
 
             returnResponse(result)
+        }
+
+        uint32_t Network::getIPSettings2(const JsonObject& parameters, JsonObject& response)
+        {
+            // stub method.
+            // turns out the getIpSettings in original method doesn't return _anything_ when IP isn't acquired yet
+            // due to dhcp server absence/failure and their solution was to add new one that returns just
+            // interface and autoconfig fields in that case. We're already doing it so just pass it to other method.
+            return getIPSettings(parameters, response);
         }
 
         uint32_t Network::isConnectedToInternet (const JsonObject &parameters, JsonObject &response)

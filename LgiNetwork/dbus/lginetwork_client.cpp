@@ -141,7 +141,7 @@ bool LgiNetworkClient::getParamsForInterface(const std::string iface, std::vecto
             {
                 params.push_back(make_pair(std::string(key), std::string(value)));
             }
-            g_variant_unref(out_params);
+            //g_variant_unref(out_params);
         }
 
         return true;
@@ -187,7 +187,7 @@ bool LgiNetworkClient::getSpecificParamsForInterface(const std::string iface, st
                     iter->second = string(value);
             }
 
-            g_variant_unref(out_params);
+            //g_variant_unref(out_params);
         }
 
         return true;
@@ -310,8 +310,15 @@ int LgiNetworkClient::Run()
     }
     else
     {
-        LOGERR("Failed to create networkconfig proxy: %s", error->message);
-        g_error_free(error);
+        if (error)
+        {
+            LOGERR("Failed to create networkconfig proxy: %s", error->message);
+            g_error_free(error);
+        }
+        else
+        {
+            LOGERR("Failed to create networkconfig proxy.");
+        }
         return -1;
     }
 
