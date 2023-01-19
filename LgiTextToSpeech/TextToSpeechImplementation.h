@@ -54,7 +54,7 @@ namespace Plugin {
                 , _event(event)
                 , _data(data) {
                 if (_tts != nullptr) {
-                    _tts->AddRef();
+                    // _tts->AddRef();
                 }
             }
 
@@ -64,7 +64,7 @@ namespace Plugin {
             Job& operator=(const Job&) = delete;
             ~Job() {
                 if (_tts != nullptr) {
-                    _tts->Release();
+                    // _tts->Release();
                 }
             }
 
