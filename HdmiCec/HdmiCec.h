@@ -178,6 +178,8 @@ namespace WPEFramework {
             Utils::ThreadRAII m_pollThread;
             std::atomic_bool m_updateThreadExit;
             Utils::ThreadRAII m_UpdateThread;
+            bool m_rescan = false; // rescanning devices "command"
+            bool m_updateDetails = false; // updade device details "command"
 
             const void InitializeIARM();
             void DeinitializeIARM();
@@ -216,6 +218,9 @@ namespace WPEFramework {
 
             void notify(const CECFrame &in) const;
             void onMessage(const char *message);
+            void initializeSynchronizationObjects();
+            void destroySynchronizationObjects();
+            void rescanDevices();
             static void threadRun();
             static void threadUpdateCheck();
 

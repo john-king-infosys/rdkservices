@@ -190,6 +190,7 @@ namespace WPEFramework
             logicalAddress = 0xFF;
 
             loadSettings();
+            initializeSynchronizationObjects();
             if (cecSettingEnabled)
             {
                 setEnabled(cecSettingEnabled);
@@ -203,6 +204,7 @@ namespace WPEFramework
 
         HdmiCec::~HdmiCec()
         {
+            destroySynchronizationObjects();
         }
 
         void HdmiCec::Deinitialize(PluginHost::IShell* /* service */)
@@ -291,7 +293,7 @@ namespace WPEFramework
                 LOGINFO("Received IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG  event data:%d \r\n", hdmi_hotplug_event);
                 HdmiCec::_instance->onHdmiHotPlug(hdmi_hotplug_event);
                 //Trigger CEC device poll here
-                pthread_cond_signal(&(_instance->m_condSig));
+                _instance->rescanDevices();
             }
         }
 
@@ -482,12 +484,7 @@ namespace WPEFramework
 
                 LOGWARN("Start Update thread %p", smConnection );
                 m_updateThreadExit = false;
-                _instance->m_lockUpdate = PTHREAD_MUTEX_INITIALIZER;
-                _instance->m_condSigUpdate = PTHREAD_COND_INITIALIZER;
                 try {
-                    if (m_UpdateThread.get().joinable()) {
-                        m_UpdateThread.get().join();
-                    }
                     m_UpdateThread = Utils::ThreadRAII(std::thread(threadUpdateCheck));
 		} catch (const std::system_error& e) {
                     LOGERR("exception in creating threadUpdateCheck %s", e.what());
@@ -496,12 +493,7 @@ namespace WPEFramework
                 LOGWARN("Start Thread %p", smConnection );
                 m_pollThreadExit = false;
                 _instance->m_numberOfDevices = 0;
-                _instance->m_lock = PTHREAD_MUTEX_INITIALIZER;
-                _instance->m_condSig = PTHREAD_COND_INITIALIZER;
                 try {
-                    if (m_pollThread.get().joinable()) {
-                        m_pollThread.get().join();
-                    }
                     m_pollThread = Utils::ThreadRAII(std::thread(threadRun));
 		} catch (const std::system_error& e) {
                     LOGERR("exception in creating threadRun %s", e.what());
@@ -525,17 +517,34 @@ namespace WPEFramework
             if (smConnection != NULL)
             {
                 LOGWARN("Stop Thread %p", smConnection );
-
+                //Trigger codition to exit poll loop
+                pthread_mutex_lock(&m_lockUpdate);
                 m_updateThreadExit = true;
-                //Trigger codition to exit poll loop
-                pthread_cond_signal(&(_instance->m_condSigUpdate));
+                pthread_cond_signal(&m_condSigUpdate);
+                pthread_mutex_unlock(&m_lockUpdate);
                 LOGWARN("Deleted update Thread %p", smConnection );
+                try {
+                    if (m_UpdateThread.get().joinable()) {
+                        m_UpdateThread.get().join();
+                    }
+		} catch (const std::system_error& e) {
+                    LOGERR("exception in joining thread %s", e.what());
+	        }
 
-
-                m_pollThreadExit = true;
                 //Trigger codition to exit poll loop
-                pthread_cond_signal(&(_instance->m_condSig));
+                pthread_mutex_lock(&m_lock);
+                m_pollThreadExit = true;
+                pthread_cond_signal(&m_condSig);
+                pthread_mutex_unlock(&m_lock);
                 LOGWARN("Deleted Thread %p", smConnection );
+                try {
+                    if (m_pollThread.get().joinable()) {
+                        m_pollThread.get().join();
+                    }
+		} catch (const std::system_error& e) {
+                    LOGERR("exception in joining thread %s", e.what());
+	        }
+
                 //Clear cec device cache.
                 removeAllCecDevices();
 
@@ -548,7 +557,9 @@ namespace WPEFramework
 
             if(1 == libcecInitStatus)
             {
+                LOGWARN("Before: LibCCEC::getInstance().term()");
                 LibCCEC::getInstance().term();
+                LOGWARN("After: LibCCEC::getInstance().term()");
             }
 
             if(libcecInitStatus > 0)
@@ -823,7 +834,7 @@ namespace WPEFramework
         {   //sample servicemanager response:
 		LOGINFOMETHOD();
 		//Trigger CEC device poll here
-		pthread_cond_signal(&(_instance->m_condSig));
+		rescanDevices();
 
 		bool success = true;
 		response["numberofdevices"] = HdmiCec::_instance->m_numberOfDevices;
@@ -1029,26 +1040,32 @@ namespace WPEFramework
 			return;
 		LOGINFO("Entering ThreadRun: _instance->m_pollThreadExit %d",_instance->m_pollThreadExit.load());
 		int i = 0;
-		pthread_mutex_lock(&(_instance->m_lock));//pthread_cond_wait should be mutex protected. //pthread_cond_wait will unlock the mutex and perfoms wait for the condition.
 		while (!_instance->m_pollThreadExit) {
 			bool isActivateUpdateThread = false;
 			LOGINFO("Starting cec device polling");
 			for(i=0; i< LogicalAddress::UNREGISTERED; i++ ) {
+                if (_instance->m_pollThreadExit) break;
 				bool isConnected = _instance->pingDeviceUpdateList(i);
 				if (isConnected){
 					isActivateUpdateThread = isConnected;
 				}
 			}
-			if (isActivateUpdateThread){
-				//i any of devices is connected activate thread update check
+			if (_instance->m_pollThreadExit == false && isActivateUpdateThread){
+				//if any of devices is connected activate thread update check
+				pthread_mutex_lock(&(_instance->m_lockUpdate));
+				_instance->m_updateDetails = true;   
 				pthread_cond_signal(&(_instance->m_condSigUpdate));
+				pthread_mutex_unlock(&(_instance->m_lockUpdate));
 			}
 			//Wait for mutex signal here to continue the worker thread again.
-			pthread_cond_wait(&(_instance->m_condSig), &(_instance->m_lock));
-
+			pthread_mutex_lock(&(_instance->m_lock));//pthread_cond_wait should be mutex protected. //pthread_cond_wait will unlock the mutex and perfoms wait for the condition.
+			while (_instance->m_pollThreadExit == false && _instance->m_rescan == false) {
+				pthread_cond_wait(&(_instance->m_condSig), &(_instance->m_lock));
+			}
+			_instance->m_rescan = false;
+			pthread_mutex_unlock(&(_instance->m_lock));
 		}
-		pthread_mutex_unlock(&(_instance->m_lock));
-                LOGINFO("%s: Thread exited", __FUNCTION__);
+		LOGINFO("%s: Thread exited", __FUNCTION__);
 	}
 
 	void HdmiCec::threadUpdateCheck()
@@ -1059,11 +1076,18 @@ namespace WPEFramework
 			return;
 		LOGINFO("Entering ThreadUpdate: _instance->m_updateThreadExit %d",_instance->m_updateThreadExit.load());
 		int i = 0;
-		pthread_mutex_lock(&(_instance->m_lockUpdate));//pthread_cond_wait should be mutex protected. //pthread_cond_wait will unlock the mutex and perfoms wait for the condition.
 		while (!_instance->m_updateThreadExit) {
-			//Wait for mutex signal here to continue the worker thread again.
-			pthread_cond_wait(&(_instance->m_condSigUpdate), &(_instance->m_lockUpdate));
+			pthread_mutex_lock(&(_instance->m_lockUpdate));//pthread_cond_wait should be mutex protected. //pthread_cond_wait will unlock the mutex and perfoms wait for the condition.
+			while (_instance->m_updateThreadExit == false && _instance->m_updateDetails == false) {
+				//Wait for mutex signal here to continue the worker thread again.
+				pthread_cond_wait(&(_instance->m_condSigUpdate), &(_instance->m_lockUpdate));
+			}
+			_instance->m_updateDetails = false;
+			pthread_mutex_unlock(&(_instance->m_lockUpdate));
 
+			if (_instance->m_updateThreadExit) {
+				break;
+			}
 			LOGINFO("Starting cec device update check");
 			for(i=0; ((i< LogicalAddress::UNREGISTERED)&&(!_instance->m_updateThreadExit)); i++ ) {
 				//If details are not updated. update now.
@@ -1106,9 +1130,32 @@ namespace WPEFramework
 			}
 
 		}
-		pthread_mutex_unlock(&(_instance->m_lockUpdate));
-                LOGINFO("%s: Thread exited", __FUNCTION__);
+		LOGINFO("%s: Thread exited", __FUNCTION__);
 	}
+
+    void HdmiCec::initializeSynchronizationObjects()
+    {
+        pthread_mutex_init(&m_lock, NULL);
+        pthread_mutex_init(&m_lockUpdate, NULL);
+        pthread_cond_init(&m_condSig, NULL);
+        pthread_cond_init(&m_condSigUpdate, NULL);
+    }
+    
+    void HdmiCec::destroySynchronizationObjects()
+    {
+        pthread_mutex_destroy(&m_lock);
+        pthread_mutex_destroy(&m_lockUpdate);
+        pthread_cond_destroy(&m_condSig);
+        pthread_cond_destroy(&m_condSigUpdate);
+    }
+
+    void HdmiCec::rescanDevices()
+    {
+        pthread_mutex_lock(&m_lock);
+        m_rescan = true;
+        pthread_cond_signal(&m_condSig);
+        pthread_mutex_unlock(&m_lock);
+    }
 
     } // namespace Plugin
 } // namespace WPEFramework
