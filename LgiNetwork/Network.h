@@ -137,19 +137,25 @@ namespace WPEFramework {
             static Network *getInstance() {return _instance;}
 
         private:
+            struct IpAddresses {
+                string ipv4 = "";
+                string ipv6 = "";
+            };
+            void updateAddresses();
             lginet::LgiNetworkClient m_NetworkClient;
             NetUtils m_netUtils;
             string m_stunEndPoint;
             string m_defaultInterface;
             string m_gatewayInterface;
-            string m_oldIpv4;
-            string m_oldIpv6;
+            //string m_oldIpv4;
+            //string m_oldIpv6;
             uint16_t m_stunPort;
             uint16_t m_stunBindTimeout;
             uint16_t m_stunCacheTimeout;
             bool m_stunSync;
             uint32_t m_apiVersionNumber;
             bool m_dhcpEventSeen;
+            std::map<string, IpAddresses> m_addressMap;
         };
     } // namespace Plugin
 } // namespace WPEFramework

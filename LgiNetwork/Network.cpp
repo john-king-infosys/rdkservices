@@ -141,6 +141,8 @@ namespace WPEFramework
                 m_NetworkClient.onStatusChangeEvent = StatusChangeEvent;
                 m_NetworkClient.onNetworkingEvent = NetworkingEvent;
                 LOGINFO("Succeeded initializing LGI DBus Network Client");
+                updateAddresses();
+                LOGINFO("Succeeded initializing LGI DBus Network Client after update");
             }
 
             return msg;
@@ -234,6 +236,41 @@ namespace WPEFramework
             array.Add("RDK-20093");
             response["quirks"] = array;
             returnResponse(true)
+        }
+        
+        void Network::updateAddresses()
+        {
+                std::vector<std::string>* interfaces = m_NetworkClient.getInterfaces();
+                if (interfaces)
+                {
+                    for (auto& iface : *interfaces)
+                    {
+                        JsonObject interface;
+                        std::map<std::string, std::string> parameters;
+                        parameters[lginet::ParamIpv4Ip] = "";
+                        parameters[lginet::ParamIpv6Ip] = "";
+
+                        if (iface == "")
+                            continue;
+                        if (m_NetworkClient.getSpecificParamsForInterface(iface, parameters))
+                        {
+                            string ifaceName = iface;
+#ifdef LGINET_STRICT_IFACE_NAMES
+                            ifaceName = getTypeOfInterface(iface);
+#endif
+                           IpAddresses adr = m_addressMap[ifaceName];
+                           adr.ipv4 = parameters[lginet::ParamIpv4Ip];
+                           adr.ipv6 = parameters[lginet::ParamIpv6Ip];
+                           LOGINFO("Update startup addresses: iface=%s ipv4=%s ipv6=%s", ifaceName.c_str(), adr.ipv4.c_str(), adr.ipv6.c_str());
+                           m_addressMap[ifaceName] = adr;
+                        }
+                        else
+                        {
+                            LOGINFO("ERROR");
+                        }
+                    }
+                    delete interfaces;
+                }
         }
 
         uint32_t Network::getInterfaces (const JsonObject& parameters, JsonObject& response)
@@ -1029,39 +1066,54 @@ namespace WPEFramework
 
         void Network::onInterfaceIPAddressChanged(string interface, string ipv6Addr, string ipv4Addr, bool acquired)
         {
+            LOGINFO("interface IP change: if=%s ipv6=%s ipv4=%s %d", interface.c_str(), ipv6Addr.c_str(), ipv4Addr.c_str(), acquired);
             JsonObject params;
+            string eventInterface = interface;
 #ifdef LGINET_STRICT_IFACE_NAMES
-            params["interface"] = getTypeOfInterface(interface);
-#else
-            params["interface"] = interface;
+            eventInterface = getTypeOfInterface(interface);
 #endif
+            params["interface"] = eventInterface;
+            IpAddresses adr = m_addressMap[eventInterface];
             // prevent re-triggering event for the same IP address
             if (acquired)
             {
-                if (m_oldIpv4 != ipv4Addr)
+                if (ipv4Addr != "")
+                {
+                    adr.ipv4 = ipv4Addr;
+                }
+                if (ipv6Addr != "")
+                {
+                    adr.ipv6 = ipv6Addr;
+                }
+//                params["ip4Address"] = adr.ipv4;
+//                params["ip6Address"] = adr.ipv6;
+
+                /*if (adr.ipv4 != ipv4Addr)
                 {
                     if (ipv4Addr != "")
                     {
                         params["ip4Address"] = ipv4Addr;
+                        adr.ipv4 = ipv4Addr;
                     }
-                    m_oldIpv4 = ipv4Addr;
                 }
 
-                if (m_oldIpv6 != ipv6Addr)
+                if (adr.ipv6 != ipv6Addr)
                 {
                     if (ipv6Addr != "")
                     {
-                        params["ip6Address"] = ipv6Addr;
+                        adr.ipv6 = ipv6Addr;
                     }
-                    m_oldIpv6 = ipv6Addr;
-                }
+                } */
             }
             else
             {
-                params["ip4Address"] = m_oldIpv4;
-                params["ip6Address"] = m_oldIpv6;
+//                params["ip4Address"] = adr.ipv4;
+//                params["ip6Address"] = adr.ipv6;
             }
+            m_addressMap[eventInterface] = adr;
             params["status"] = string (acquired ? "ACQUIRED" : "LOST");
+            params["ip4Address"] = adr.ipv4;
+            params["ip6Address"] = adr.ipv6;
             sendNotify("onIPAddressStatusChanged", params);
         }
 
