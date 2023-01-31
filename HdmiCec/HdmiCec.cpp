@@ -197,6 +197,9 @@ namespace WPEFramework
             logicalAddress = 0xFF;
 
             loadSettings();
+#ifdef LGI_CUSTOM_IMPL
+            isDeviceActiveSource = checkActiveSource();
+#endif
             if (cecSettingEnabled)
             {
                 setEnabled(cecSettingEnabled);
@@ -247,6 +250,9 @@ namespace WPEFramework
                 IARM_CHECK( Utils::Synchro::RegisterLockedIarmEventHandler<HdmiCec>(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_DAEMON_INITIALIZED,cecMgrEventHandler) );
                 IARM_CHECK( Utils::Synchro::RegisterLockedIarmEventHandler<HdmiCec>(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_STATUS_UPDATED,cecMgrEventHandler) );
                 IARM_CHECK( Utils::Synchro::RegisterLockedIarmEventHandler<HdmiCec>(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG, dsHdmiEventHandler) );
+#ifdef LGI_CUSTOM_IMPL
+                IARM_CHECK( Utils::Synchro::RegisterLockedIarmEventHandler<HdmiCec>(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_ACTIVESTATUSCHANGE,cecActiveSourceEventHandler) );
+#endif
             }
         }
 
@@ -259,6 +265,9 @@ namespace WPEFramework
                 IARM_CHECK( Utils::Synchro::RemoveLockedEventHandler<HdmiCec>(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_DAEMON_INITIALIZED,cecMgrEventHandler) );
                 IARM_CHECK( Utils::Synchro::RemoveLockedEventHandler<HdmiCec>(IARM_BUS_CECMGR_NAME, IARM_BUS_CECMGR_EVENT_STATUS_UPDATED,cecMgrEventHandler) );
                 IARM_CHECK( Utils::Synchro::RemoveLockedEventHandler<HdmiCec>(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG, dsHdmiEventHandler) );
+#ifdef LGI_CUSTOM_IMPL
+                IARM_CHECK( Utils::Synchro::RemoveLockedEventHandler<HdmiCec>(IARM_BUS_CECHOST_NAME, IARM_BUS_CECHost_EVENT_ACTIVESTATUSCHANGE,cecActiveSourceEventHandler) );
+#endif
             }
         }
 
@@ -305,7 +314,9 @@ namespace WPEFramework
                 LOGINFO("Received IARM_BUS_DSMGR_EVENT_HDMI_HOTPLUG  event data:%d \r\n", hdmi_hotplug_event);
                 HdmiCec::_instance->onHdmiHotPlug(hdmi_hotplug_event);
                 //Trigger CEC device poll here
+#ifndef LGI_CUSTOM_IMPL
                 pthread_cond_signal(&(_instance->m_condSig));
+#endif
             }
         }
 
@@ -494,6 +505,7 @@ namespace WPEFramework
             if(smConnection)
             {
 
+#ifndef LGI_CUSTOM_IMPL
                 LOGWARN("Start Update thread %p", smConnection );
                 m_updateThreadExit = false;
                 _instance->m_lockUpdate = PTHREAD_MUTEX_INITIALIZER;
@@ -520,6 +532,7 @@ namespace WPEFramework
 		} catch (const std::system_error& e) {
                     LOGERR("exception in creating threadRun %s", e.what());
 	        }
+#endif
 
             }
             cecEnableStatus = true;
@@ -538,6 +551,7 @@ namespace WPEFramework
 
             if (smConnection != NULL)
             {
+#ifndef LGI_CUSTOM_IMPL
                 LOGWARN("Stop Thread %p", smConnection );
 
                 m_updateThreadExit = true;
@@ -561,6 +575,7 @@ namespace WPEFramework
                     m_pollThread.get().join();
                 }
                 LOGWARN("Deleted Thread %p", smConnection );
+#endif
                 //Clear cec device cache.
                 removeAllCecDevices();
 
@@ -807,6 +822,7 @@ namespace WPEFramework
 
             if(length >=2)
             {
+#ifndef LGI_CUSTOM_IMPL
                  if(input_frameBuf[1] == ROUTING_CHANGE || input_frameBuf[1] == ROUTING_INFORMATION || input_frameBuf[1] == ACTIVE_SOURCE || input_frameBuf[1] == SET_STREAM_PATH)
                  {
 		     int paIndex = (input_frameBuf[1]==ROUTING_CHANGE) ? 4: 2;
@@ -820,6 +836,7 @@ namespace WPEFramework
                      HdmiCec::_instance->sendActiveSourceEvent();
                      LOGINFO("Active Source Event : Device Physical Address :%x Physical Address from message :%x isDeviceActiveSource status :%d   ",physicalAddress,tempPhyAddres,isDeviceActiveSource);
                  }
+#endif
             }
 
             std::vector <char> buf;
@@ -848,7 +865,9 @@ namespace WPEFramework
         {   //sample servicemanager response:
 		LOGINFOMETHOD();
 		//Trigger CEC device poll here
+#ifndef LGI_CUSTOM_IMPL
 		pthread_cond_signal(&(_instance->m_condSig));
+#endif
 
 		bool success = true;
 		response["numberofdevices"] = HdmiCec::_instance->m_numberOfDevices;
@@ -1050,6 +1069,7 @@ namespace WPEFramework
 		requestOsdName (newDevlogicalAddress);
 	}
 
+#ifndef LGI_CUSTOM_IMPL
 	void HdmiCec::threadRun()
 	{
 		if(!HdmiCec::_instance)
@@ -1137,6 +1157,56 @@ namespace WPEFramework
 		pthread_mutex_unlock(&(_instance->m_lockUpdate));
                 LOGINFO("%s: Thread exited", __FUNCTION__);
 	}
+#endif
+
+#ifdef LGI_CUSTOM_IMPL
+    bool HdmiCec::checkActiveSource()
+    {
+        bool result = false;
+        IARM_Bus_CECHost_GetActiveStatus_Param_t param;
+        IARM_Result_t res;
+        res = IARM_Bus_Call(IARM_BUS_CECHOST_NAME, IARM_BUS_CEC_HOST_GetActiveStatus, (void *)&param, sizeof(param));
+        if (res == IARM_RESULT_SUCCESS)
+        {
+            result = param.isActiveStatus;
+            LOGERR("IARM_BUS_CEC_HOST_GetActiveStatus result: %d", result);
+        }
+        else
+        {
+            LOGERR("IARM_BUS_CEC_HOST_GetActiveStatus failed");
+        }
+        return result;
+    }
+
+    void HdmiCec::updateActiveSource(bool activeSource)
+    {
+        LOGINFO("updateActiveSource newState=%d lastState=%d", activeSource, isDeviceActiveSource);
+        if (activeSource != isDeviceActiveSource)
+        {
+            isDeviceActiveSource = activeSource;
+            sendActiveSourceEvent();
+        }
+    }
+
+    void HdmiCec::cecActiveSourceEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
+    {
+        LOGINFO("owner=%s eventId=%d", owner, eventId);
+        if(!HdmiCec::_instance)
+        {
+            return;
+        }
+
+        if(!strcmp(owner, IARM_BUS_CECHOST_NAME))
+        {
+            if (IARM_BUS_CECHost_EVENT_ACTIVESTATUSCHANGE == eventId)
+            {
+                _IARM_Bus_CECHost_ActiveStatusChanged_EventData_t *eventData = (_IARM_Bus_CECHost_ActiveStatusChanged_EventData_t *)data;
+                LOGINFO("eventData->isActiveStatus=%d", eventData->isActiveStatus);
+                HdmiCec::_instance->updateActiveSource(eventData->isActiveStatus);
+            }
+        }
+    }
+#endif
 
     } // namespace Plugin
 } // namespace WPEFramework
