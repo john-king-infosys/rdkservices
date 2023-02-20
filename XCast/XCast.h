@@ -29,6 +29,7 @@
 #include "libIBusDaemon.h"
 #include "pwrMgr.h"
 #include "XCastCommon.h"
+#include "LockedRtNotifier.hpp"
 
 using namespace std;
 
@@ -103,6 +104,8 @@ private:
     bool m_isDynamicRegistrationsRequired;
     mutex m_appConfigMutex;
     std::vector<DynamicAppConfig*> m_appConfigCache;
+    LockedRtNotifier m_lockedRtServiceApi;
+
     static string m_friendlyName;
     static bool m_standbyBehavior;
     static bool m_enableStatus;
