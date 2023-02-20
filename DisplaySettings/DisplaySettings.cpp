@@ -236,7 +236,7 @@ namespace WPEFramework {
         IARM_Bus_PWRMgr_PowerState_t DisplaySettings::m_powerState = IARM_BUS_PWRMGR_POWERSTATE_STANDBY;
 
         DisplaySettings::DisplaySettings()
-            // : PluginHost::JSONRPC()
+            : PluginHost::JSONRPC()
         {
             LOGINFO("ctor");
             DisplaySettings::_instance = this;
