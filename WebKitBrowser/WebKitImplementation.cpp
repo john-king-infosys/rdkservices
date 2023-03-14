@@ -1469,14 +1469,18 @@ static GSourceFuncs _handlerIntervention =
                     int(urlData_.result),
                     diff_in_ms);
 
-            ODH_WARNING(
-                    "WPE0040",
-                    WPE_CONTEXT_WITH_URL(urlData_.url.c_str()),
-                    "URL: %s, load result %s(%d), %dms",
-                    urlData_.url.c_str(),
-                    result_str,
-                    int(urlData_.result),
-                    diff_in_ms);
+            fprintf(stderr, "ARRISEOS send WPE0040\n");
+            for (unsigned i = 0; i < 100; ++i) {
+                fprintf(stderr, "ARRISEOS WPE0040 send\n");
+                ODH_WARNING(
+                        "WPE0040",
+                        WPE_CONTEXT_WITH_URL(urlData_.url.c_str()),
+                        "URL: %s, load result %s(%d), %dms",
+                        urlData_.url.c_str(),
+                        result_str,
+                        int(urlData_.result),
+                        diff_in_ms);
+            }
 
             return urlData_.result;
         }
@@ -1926,7 +1930,11 @@ static GSourceFuncs _handlerIntervention =
             }
 
             _adminLock.Unlock();
-            ODH_ERROR("WPE0030", WPE_CONTEXT_WITH_URL(url.c_str()), "Failed to load URL: %s", url.c_str());
+
+            for (unsigned i = 0; i < 100; ++i) {
+                fprintf(stderr, "ARRISEOS send WPE0030\n");
+                ODH_ERROR("WPE0030", WPE_CONTEXT_WITH_URL(url.c_str()), "Failed to load URL: %s", url.c_str());
+            }
         }
 
         void OnStateChange(const PluginHost::IStateControl::state newState)
