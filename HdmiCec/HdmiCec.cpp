@@ -1092,7 +1092,7 @@ namespace WPEFramework
 		while (!_instance->m_updateThreadExit) {
 			//Wait for mutex signal here to continue the worker thread again.
 			pthread_cond_wait(&(_instance->m_condSigUpdate), &(_instance->m_lockUpdate));
-            Utils::Synchro::LockApiGuard<HdmiCec> lockGuard;
+			Utils::Synchro::LockApiGuard<HdmiCec> lockGuard;
 
 			LOGINFO("Starting cec device update check");
 			for(i=0; ((i< LogicalAddress::UNREGISTERED)&&(!_instance->m_updateThreadExit)); i++ ) {
@@ -1106,12 +1106,12 @@ namespace WPEFramework
 
 						if (!HdmiCec::_instance->deviceList[i].m_isOSDNameUpdated){
 							iCounter = 0;
-                            lockGuard.unlock();
+							lockGuard.unlock();
 							while ((!_instance->m_updateThreadExit) && (iCounter < (2*10))) { //sleep for 2sec.
 								usleep (100 * 1000); //sleep for 100 milli sec
 								iCounter ++;
 							}
-                            lockGuard.lock();
+							lockGuard.lock();
 							HdmiCec::_instance->requestOsdName (i);
 							retry = true;
 						}
@@ -1120,14 +1120,14 @@ namespace WPEFramework
 						}
 
 						if (!HdmiCec::_instance->deviceList[i].m_isVendorIDUpdated){
-                            Utils::Synchro::UnlockApiGuard<HdmiCec> ulockGuard;
+							Utils::Synchro::UnlockApiGuard<HdmiCec> ulockGuard;
 							iCounter = 0;
-                            lockGuard.unlock();
+							lockGuard.unlock();
 							while ((!_instance->m_updateThreadExit) && (iCounter < (2*10))) { //sleep for 1sec.
 								usleep (100 * 1000); //sleep for 100 milli sec
 								iCounter ++;
 							}
-                            lockGuard.lock();
+							lockGuard.lock();
 
 							HdmiCec::_instance->requestVendorID (i);
 							retry = true;
