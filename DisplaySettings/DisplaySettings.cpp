@@ -20,6 +20,21 @@
 //I have put several "TODO(MROLLINS)" in the code below to mark areas of concern I encountered
 //  when refactoring the servicemanager's version of displaysettings into this new thunder plugin format
 
+///////// TODO REMOVE /////////////
+
+#define dsTV_RESOLUTION_576p50 dsTV_RESOLUTION_576p
+#define dsTV_RESOLUTION_720p50 dsTV_RESOLUTION_720p
+#define dsTV_RESOLUTION_1080p24 dsTV_RESOLUTION_1080p
+#define dsTV_RESOLUTION_1080i25 dsTV_RESOLUTION_1080i
+#define dsTV_RESOLUTION_1080p30 dsTV_RESOLUTION_1080p
+#define dsTV_RESOLUTION_1080i50 dsTV_RESOLUTION_1080i
+#define dsTV_RESOLUTION_1080p50 dsTV_RESOLUTION_1080p
+#define dsTV_RESOLUTION_1080p60 dsTV_RESOLUTION_1080p
+#define dsTV_RESOLUTION_2160p50 dsTV_RESOLUTION_2160p30
+#define dsTV_RESOLUTION_2160p dsTV_RESOLUTION_2160p30
+
+///////// END OF TODO REMOVE /////////////
+
 #include "DisplaySettings.h"
 #include <algorithm>
 #include "dsMgr.h"
