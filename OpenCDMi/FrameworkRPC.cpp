@@ -26,6 +26,7 @@
 #include "Module.h"
 #include "CENCParser.h"
 #include "CapsParser.h"
+#include "LibertyConfig.h"
 
 // Get in the definitions required for access to the sepcific
 // DRM engines.
@@ -1373,7 +1374,10 @@ namespace Plugin {
 
                     //now handle the configuration
                     if (factory != factories.end()) {
-                        const string configuration(index.Current().Configuration.Value());
+                        string configuration(index.Current().Configuration.Value());
+                        if(system == "WideVine") {
+                            configuration = Lgi::updateWidevineConfig(configuration, _asConfig);
+                        }
                         factory->second.Factory->Initialize(_shell, configuration);
                     }
                 }
@@ -1682,6 +1686,7 @@ namespace Plugin {
         using LockGuard = std::lock_guard<std::mutex>;
         std::list<Exchange::IContentDecryption::INotification *> _notificationCallbacks{};
         std::mutex notificationMutex{};
+        Lgi::ASConfig _asConfig;
     };
 
     SERVICE_REGISTRATION(OCDMImplementation, 1, 0);
