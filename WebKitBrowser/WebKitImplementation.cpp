@@ -600,7 +600,6 @@ static GSourceFuncs _handlerIntervention =
                 Add(_T("watchdogchecktimeoutinseconds"), &WatchDogCheckTimeoutInSeconds);
                 Add(_T("watchdoghangthresholdtinseconds"), &WatchDogHangThresholdInSeconds);
                 Add(_T("loadblankpageonsuspendenabled"), &LoadBlankPageOnSuspendEnabled);
-                Add(_T("securityprofiles"), &SecurityProfiles);
             }
             ~Config()
             {
@@ -799,6 +798,7 @@ static GSourceFuncs _handlerIntervention =
             , _allowMixedContent(true)
             , _userScript()
             , _userStyleSheet()
+            , _securityProfileName()
         {
             // Register an @Exit, in case we are killed, with an incorrect ref count !!
             if (atexit(CloseDown) != 0) {
@@ -1263,14 +1263,18 @@ static GSourceFuncs _handlerIntervention =
 #endif
         uint32_t SecurityProfile(string& profile) const override
         {
-            // dummy implementation: this api is not used for openssl backend (for yocto 3.1)
-            profile = "";
+            _adminLock.Lock();
+            profile = _securityProfileName;
+            _adminLock.Unlock();
             return Core::ERROR_NONE;
         }
 
         uint32_t SecurityProfile(const string& profile) override
         {
             // dummy implementation: this api is not used for openssl backend (for yocto 3.1)
+             _adminLock.Lock();
+             _securityProfileName = profile;
+             _adminLock.Unlock();
             return Core::ERROR_NONE;
         }
 
@@ -3074,6 +3078,7 @@ static GSourceFuncs _handlerIntervention =
         bool _allowMixedContent;
         string _userScript;
         string _userStyleSheet;
+        string _securityProfileName;
     };
 
     SERVICE_REGISTRATION(WebKitImplementation, 1, 0);
