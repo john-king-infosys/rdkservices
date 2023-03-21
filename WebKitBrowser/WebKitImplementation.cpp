@@ -722,7 +722,7 @@ static GSourceFuncs _handlerIntervention =
                     _browser.DeactivateBrowser(PluginHost::IShell::WATCHDOG_EXPIRED);
                 }
 
-                _worker.Schedule(Core::Time::Now().Add(_watchDogTimeoutInSeconds * 1000));
+                _worker.Reschedule(Core::Time::Now().Add(_watchDogTimeoutInSeconds * 1000));
             }
 
         public:
@@ -776,7 +776,7 @@ static GSourceFuncs _handlerIntervention =
                 g_source_attach ( hangSource, ctx );
                 #endif
 
-                _worker.Schedule(Core::Time::Now().Add(_watchDogTimeoutInSeconds * 1000));
+                _worker.Reschedule(Core::Time::Now().Add(_watchDogTimeoutInSeconds * 1000));
             }
 
             HangDetector(const HangDetector&) = delete;
