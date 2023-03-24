@@ -19,12 +19,12 @@
 
 #include "WifiManager.h"
 #include "UtilsJsonRpc.h"
-#include "UtilsIarm.h"
+// #include "UtilsIarm.h"
 
 #include <vector>
 #include <utility>
 
-#include "libIBus.h"
+// #include "libIBus.h"
 
 // TODO: remove this
 #define registerMethod(...) for (uint8_t i = 1; GetHandler(i); i++) GetHandler(i)->Register<JsonObject, JsonObject>(__VA_ARGS__)
@@ -97,7 +97,7 @@ namespace WPEFramework
 
         const string WifiManager::Initialize(PluginHost::IShell* service)
         {
-            Utils::IARM::init();
+            // Utils::IARM::init();
 
             if (instance != nullptr) {
                 LOGERR("Expecting 'instance' to be initially unset; two instances of the plugin?");
