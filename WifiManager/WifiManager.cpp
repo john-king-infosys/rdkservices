@@ -20,6 +20,7 @@
 #include "WifiManager.h"
 #include "UtilsJsonRpc.h"
 // #include "UtilsIarm.h"
+#include "WifiImplementation.h"
 
 #include <vector>
 #include <utility>
@@ -96,8 +97,8 @@ namespace WPEFramework
         }
 
         const string WifiManager::Initialize(PluginHost::IShell* service)
-        {
-            // Utils::IARM::init();
+        {            
+            WifiImplementation::init();
 
             if (instance != nullptr) {
                 LOGERR("Expecting 'instance' to be initially unset; two instances of the plugin?");
@@ -116,6 +117,7 @@ namespace WPEFramework
         void WifiManager::Deinitialize(PluginHost::IShell* service)
         {
             wifiScan.Deinitialize(service);
+            WifiImplementation::deinit();
 
             instance = nullptr;
         }

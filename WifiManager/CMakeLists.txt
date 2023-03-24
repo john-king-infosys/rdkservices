@@ -23,7 +23,6 @@ set(PLUGIN_WIFI_IMPL "impl" CACHE STRING "To select the implementation folder")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
-
 add_library(${MODULE_NAME} SHARED
         WifiManager.cpp
         Module.cpp
@@ -33,6 +32,12 @@ add_library(${MODULE_NAME} SHARED
         ${PLUGIN_WIFI_IMPL}/WifiManagerConnect.cpp
         ${PLUGIN_WIFI_IMPL}/WifiManagerScan.cpp
         ${PLUGIN_WIFI_IMPL}/WifiManagerEvents.cpp)
+
+# for LG variant also add dbus implementation
+if(${PLUGIN_WIFI_IMPL} STREQUAL "impl_lg")
+        file(GLOB DBUS_SOURCES "impl_lg/dbus/*.cpp")
+        target_sources(${MODULE_NAME} PRIVATE ${DBUS_SOURCES})
+endif()
 
 set_source_files_properties(
         WifiManager.cpp
@@ -48,6 +53,7 @@ list(APPEND CMAKE_MODULE_PATH
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 target_include_directories(${MODULE_NAME} PRIVATE ${IARMBUS_INCLUDE_DIRS} ../helpers ${PLUGIN_WIFI_IMPL})
+
 target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${IARMBUS_LIBRARIES})
 
 

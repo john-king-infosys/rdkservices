@@ -37,14 +37,8 @@ namespace WPEFramework {
             uint32_t getSupportedSecurityModes(const JsonObject& parameters, JsonObject& response);
             void setWifiStateCache(bool value,WifiState state);
 
-            std::atomic<bool> m_useWifiStateCache;
-            WifiState m_wifiStateCache;
-            std::string m_ConnectedSSIDCache;
-            std::string m_ConnectedBSSIDCache;
-            int m_ConnectedSecurityModeCache;
-
-	private:
-	    std::map<std::string, std::string> retrieveValues(const char *, char *, size_t );
+            // std::atomic<bool> m_useWifiStateCache;
+            // WifiState m_wifiStateCache;
         };
     }
 }

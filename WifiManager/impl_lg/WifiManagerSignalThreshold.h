@@ -48,6 +48,21 @@ namespace WPEFramework {
             uint32_t setSignalThresholdChangeEnabled(const JsonObject& parameters, JsonObject& response);
             void setSignalThresholdChangeEnabled(bool enable);
             uint32_t isSignalThresholdChangeEnabled(const JsonObject& parameters, JsonObject& response) const;
+
+        private:
+            void setSignalThresholdChangeEnabled(bool enabled, int interval);
+            bool isSignalThresholdChangeEnabled() const;
+
+            void loop(int interval);
+            void stopThread();
+            void startThread(int interval);
+
+        private:
+            std::thread thread;
+            std::atomic<bool> changeEnabled;
+            std::mutex cv_mutex;
+            std::condition_variable cv;
+            bool running;
         };
     }
 }

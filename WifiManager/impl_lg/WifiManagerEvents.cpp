@@ -49,3 +49,13 @@ void WifiManagerEvents::Deinitialize(PluginHost::IShell*)
 {
     LOGINFO("deinitializing");
 }
+
+
+/*
+
+WifiManager::onWifiSignalThresholdChanged(...) is already handled in WifiManagerSignalThreshold
+
+we still need to forward wifi state changes to:
+void WifiManager::onWIFIStateChanged(WifiState state, bool isLNF)
+
+*/

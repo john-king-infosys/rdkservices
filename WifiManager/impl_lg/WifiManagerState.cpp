@@ -25,11 +25,9 @@ using namespace std;
 
 WifiManagerState::WifiManagerState()
 {
-    m_useWifiStateCache = false;
-    m_wifiStateCache = WifiState::FAILED;
-    m_ConnectedSSIDCache = "";
-    m_ConnectedBSSIDCache = "";
-    m_ConnectedSecurityModeCache = 0;
+    // TODO: why would we need that?
+    // m_useWifiStateCache = false;
+    // m_wifiStateCache = WifiState::FAILED;
 }
 
 WifiManagerState::~WifiManagerState()
@@ -39,19 +37,31 @@ WifiManagerState::~WifiManagerState()
 
 void WifiManagerState::setWifiStateCache(bool value,WifiState Cstate)
 {
-    m_useWifiStateCache = value;
-    m_wifiStateCache = Cstate;
+    // TODO: why would we need that?
+    // m_useWifiStateCache = value;
+    // m_wifiStateCache = Cstate;
 }
 
 uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObject &response)
 {
+    // TODO: this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest can be mocked
     LOGINFOMETHOD();
+    response["state"] = static_cast<int>(0);
     returnResponse(false);
 }
 
 uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonObject &response) const
 {
+    // TODO: this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest can be mocked
     LOGINFOMETHOD();
+    // todo: call dbus
+    response["ssid"] = string("todo");
+    response["bssid"] = string("n/a");
+    response["rate"] = string("n/a");
+    response["noise"] = string("n/a");
+    response["security"] = string("n/a");
+    response["signalStrength"] = string("n/a");
+    response["frequency"] = string("n/a");
     returnResponse(false);
 }
 
