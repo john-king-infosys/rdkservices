@@ -20,18 +20,50 @@
 #include "WifiManagerSignalThreshold.h"
 #include "../WifiManager.h" // Need access to WifiManager::getInstance so can't use 'WifiManagerInterface.h'
 #include "UtilsJsonRpc.h"
-
+#include "dbus/DBusClient.h"
 #include <chrono>
+#include "WifiManagerState.h"
 
 using namespace WPEFramework::Plugin;
 
 namespace {
+
     const float signalStrengthThresholdExcellent = -50.0f;
     const float signalStrengthThresholdGood = -60.0f;
     const float signalStrengthThresholdFair = -67.0f;
 
-    string retrieveValue() {
-        return "0.0"; // TODO
+    // compare onemw-src/networking/om-netconfig/src/wpa/WifiUtils.cpp, WifiUtils::decibels2quality(int aDB), where lQuality = 2 * (aDB + 100), for aDB in (-100,-50)
+    std::string quality2decibels(std::string qualityStr) {
+        if (qualityStr.empty()) {
+            return "";
+        }
+        float quality = std::stof(qualityStr);
+        if (quality >= 100) {
+            return "-50.0";
+        } else if (quality <= 0) {
+            return "-100.0";
+        } else {
+            return std::to_string((quality - 200)/2.f); // static_cast<std::stringstream&>(std::stringstream() << db).str();
+        }
+    }
+
+    std::string retrieveValue() {
+        std::string wifiInterface = WifiManagerState::getWifiInterfaceName();
+        if (wifiInterface.empty()) {
+            return "";
+        }
+        std::string netid;
+        if (DBusClient::getInstance().networkconfig1_GetParam(wifiInterface, "netid", netid)) {
+            std::map<std::string, std::string> params;
+            if (DBusClient::getInstance().wifimanagement1_GetSSIDParams(wifiInterface, netid, params)) {
+                return quality2decibels(params["strength"]);
+            } else {
+                LOGWARN("failed to retrieve ssid '%s' params", netid.c_str());
+            }
+        } else {
+            LOGWARN("failed to retrieve wifi netid param");
+        }
+        return "";
     }
 
     void getSignalData(float &signalStrengthOut, std::string &strengthOut) {
@@ -67,7 +99,7 @@ namespace {
     }
 }
 
-WifiManagerSignalThreshold::WifiManagerSignalThreshold():
+WifiManagerSignalThreshold::WifiManagerSignalThreshold() :
     changeEnabled(false),
     running(false)
 {

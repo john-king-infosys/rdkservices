@@ -19,8 +19,14 @@
 
 #pragma once
 
+#include <future>
+
+#include "dbus/DBusClient.h"
+
 #include "../Module.h"
 #include "../WifiManagerDefines.h"
+
+using namespace WifiManagerImpl;
 
 namespace WPEFramework {
     namespace Plugin {
@@ -35,10 +41,18 @@ namespace WPEFramework {
             uint32_t getConnectedSSID(const JsonObject& parameters, JsonObject& response) const;
             uint32_t setEnabled(const JsonObject& parameters, JsonObject& response);
             uint32_t getSupportedSecurityModes(const JsonObject& parameters, JsonObject& response);
-            void setWifiStateCache(bool value,WifiState state);
+            void setWifiStateCache(bool value,WifiState state) {/* not used */}            
+            static const std::string& getWifiInterfaceName();
 
-            // std::atomic<bool> m_useWifiStateCache;
-            // WifiState m_wifiStateCache;
+        private:
+            void statusChanged(const std::string& interface, InterfaceStatus status);
+            void updateWifiStatus(InterfaceStatus status);
+
+            // static std::string wifiInterfaceName;
+            std::mutex m_mutex;
+            InterfaceStatus m_wifi_status {Disabled};
+
+            static const std::string fetchWifiInterfaceName();
         };
     }
 }

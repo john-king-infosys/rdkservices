@@ -35,8 +35,17 @@ add_library(${MODULE_NAME} SHARED
 
 # for LG variant also add dbus implementation
 if(${PLUGIN_WIFI_IMPL} STREQUAL "impl_lg")
-        file(GLOB DBUS_SOURCES "impl_lg/dbus/*.cpp")
-        target_sources(${MODULE_NAME} PRIVATE ${DBUS_SOURCES})
+        find_package(LibGlib REQUIRED)
+        find_package(LibGio REQUIRED)
+        file(GLOB DBUS_SOURCES_CPP "impl_lg/dbus/*.cpp")
+        file(GLOB DBUS_SOURCES_C "impl_lg/dbus/*.c")
+        target_sources(${MODULE_NAME} PRIVATE ${DBUS_SOURCES_CPP} ${DBUS_SOURCES_C})
+        include_directories(${LIBGLIB_INCLUDE_DIRS})
+        include_directories(${LIBGIO_INCLUDE_DIRS})
+        target_link_libraries(${MODULE_NAME}
+        PRIVATE
+                ${LIBGIO_LIBRARIES}
+                ${LIBGLIB_LIBRARIES})
 endif()
 
 set_source_files_properties(

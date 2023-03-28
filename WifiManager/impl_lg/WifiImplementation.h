@@ -4,10 +4,10 @@ namespace WPEFramework {
     namespace Plugin {
         namespace WifiImplementation {
             void init() {
-                ::WifiManager::DBusClient::getInstance().run();
+                WifiManagerImpl::DBusClient::getInstance().run();
             }
             void deinit() {
-                ::WifiManager::DBusClient::getInstance().stop();
+                WifiManagerImpl::DBusClient::getInstance().stop();
             }
         }
 }}
