@@ -11,26 +11,81 @@
 
 namespace WifiManagerImpl
 {
-    static const std::map<std::string, InterfaceStatus> statusFromString {
+    static const std::map<std::string, InterfaceStatus> statusFromString{
         {"Disabled", Disabled},
         {"Disconnected", Disconnected},
         {"Associating", Associating},
         {"Dormant", Dormant},
         {"Binding", Binding},
         {"Assigned", Assigned},
-        {"Scanning", Scanning}
-    };
+        {"Scanning", Scanning}};
 
     DBusClient::DBusClient()
     {
         run();
     }
 
+    static void handle_dbus_event(GDBusProxy *proxy,
+                                  char *sender_name,
+                                  char *_signal_name,
+                                  GVariant *parameters,
+                                  gpointer user_data)
+    {
+        std::string signal_name{_signal_name};
+
+        const gsize num_params = g_variant_n_children(parameters);
+        GVariantIter iter;
+        g_variant_iter_init(&iter, parameters);
+
+        DBusClient* client = static_cast<DBusClient *>(user_data);
+
+        if (signal_name == "StatusChanged" && num_params == 2)
+        {
+            const gchar *aId = g_variant_get_string(g_variant_iter_next_value(&iter), NULL);
+            const gchar *aIfaceStatus = g_variant_get_string(g_variant_iter_next_value(&iter), NULL);
+            client->handleStatusChangedDbusEvent(aId, aIfaceStatus);
+        }
+        else
+        {
+            LOGINFO("handle_dbus_event: unsupported event; sender_name: %s signal_name: %s, num_params: %zu", sender_name, _signal_name, num_params);
+        }
+    }
+
+    void DBusClient::handleStatusChangedDbusEvent(const std::string &aId, const std::string &aIfaceStatus)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_statusChangedHandler) {
+            m_statusChangedHandler(aId, statusFromString.at(aIfaceStatus));
+        }
+    }
+
     void DBusClient::run()
     {
-        if (!m_initialized) {
+        if (!m_initialized)
+        {
             m_loopThread = std::thread(&DBusClient::dbusWorker, this);
-            m_initialized  = m_initialized_future.get_future().get();
+            m_initialized = m_initialized_future.get_future().get();
+
+            if (m_initialized && m_networkconfig1_interface && m_wifimanagement1_interface)
+            {
+                m_handle_networkconfig_gsignal = g_signal_connect(m_networkconfig1_interface->proxy, "g-signal", G_CALLBACK(handle_dbus_event), this);
+                if (!m_handle_networkconfig_gsignal)
+                {
+                    LOGERR("Cannot connect to networkconfig1 g-signal");
+                }
+                
+                /* seems we do not need any wifimanagement1 signals for now                  
+                m_handle_wifimanagement_gsignal = g_signal_connect(m_wifimanagement1_interface->proxy, "g-signal", G_CALLBACK(handle_dbus_event), this);
+                if (!m_handle_wifimanagement_gsignal)
+                {
+                    LOGERR("Cannot connect to wifimanagement1 g-signal");
+                }
+                */
+            }
+            else
+            {
+                // TODO: throw?
+            }
         }
     }
 
@@ -44,18 +99,19 @@ namespace WifiManagerImpl
         return std::vector<std::string>();
     }
 
-    bool DBusClient::networkconfig1_GetParam(const std::string& interface, const std::string& name, std::string& res)
+    bool DBusClient::networkconfig1_GetParam(const std::string &interface, const std::string &name, std::string &res)
     {
         res = "";
         return false;
     }
 
-    InterfaceStatus DBusClient::networkconfig1_GetStatus(const std::string& interface)
+    bool DBusClient::networkconfig1_GetStatus(const std::string &interface, InterfaceStatus& out)
     {
-        return InterfaceStatus::Disconnected;
+        out = InterfaceStatus::Disconnected;
+        return false;
     }
 
-    bool DBusClient::wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string,std::string> &params)
+    bool DBusClient::wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string, std::string> &params)
     {
         gint status = 0;
         guint count = 0;

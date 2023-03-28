@@ -50,114 +50,149 @@ using namespace WifiManagerImpl;
 
 WifiManagerState::WifiManagerState()
 {
-    DBusClient &dbus = DBusClient::getInstance();
-    if (getWifiInterfaceName().empty())
-    {
-        LOGWARN("No 'wifi' interface found");
-        // TODO: throw an exception?
-    }
-    else
-    {
-        // register for status updates
-        dbus.registerStatusChanged(std::bind(&WifiManagerState::statusChanged, this, std::placeholders::_1, std::placeholders::_2));
-        // get current wifi status
-        updateWifiStatus(dbus.networkconfig1_GetStatus(getWifiInterfaceName()));
-    }
+   DBusClient &dbus = DBusClient::getInstance();
+   if (getWifiInterfaceName().empty())
+   {
+      LOGWARN("No 'wifi' interface found");
+      // TODO: throw an exception?
+   }
+   else
+   {
+      // register for status updates
+      dbus.registerStatusChanged(std::bind(&WifiManagerState::statusChanged, this, std::placeholders::_1, std::placeholders::_2));
+      // get current wifi status
+      InterfaceStatus status;
+      const std::string iname = getWifiInterfaceName();
+      if (dbus.networkconfig1_GetStatus(iname, status)) {
+         updateWifiStatus(status);
+      } else {
+         LOGWARN("failed to get interface '%s' status", iname.c_str());
+      }
+   }
 }
 
 WifiManagerState::~WifiManagerState()
 {
 }
 
-namespace {
-    /*
-    `0`: UNINSTALLED - The device was in an installed state and was uninstalled; or, the device does not have a Wifi radio installed   
-    `1`: DISABLED - The device is installed but not yet enabled  
-    `2`: DISCONNECTED - The device is installed and enabled, but not yet connected to a network
-    `3`: PAIRING - The device is in the process of pairing, but not yet connected to a network  
-    `4`: CONNECTING - The device is attempting to connect to a network  
-    `5`: CONNECTED - The device is successfully connected to a network  
-    */
-    const std::map<InterfaceStatus, WifiState> statusToState {
-        {Disabled, WifiState::DISABLED},
-        {Disconnected, WifiState::DISCONNECTED},
-        {Associating, WifiState::CONNECTING},
-        {Dormant, WifiState::DISCONNECTED},
-        {Binding, WifiState::CONNECTING},
-        {Assigned, WifiState::CONNECTED},
-        {Scanning, WifiState::CONNECTING}
-    };
+namespace
+{
+   /*
+   `0`: UNINSTALLED - The device was in an installed state and was uninstalled; or, the device does not have a Wifi radio installed
+   `1`: DISABLED - The device is installed but not yet enabled
+   `2`: DISCONNECTED - The device is installed and enabled, but not yet connected to a network
+   `3`: PAIRING - The device is in the process of pairing, but not yet connected to a network
+   `4`: CONNECTING - The device is attempting to connect to a network
+   `5`: CONNECTED - The device is successfully connected to a network
+   */
+   const std::map<InterfaceStatus, WifiState> statusToState{
+       {Disabled, WifiState::DISABLED},
+       {Disconnected, WifiState::DISCONNECTED},
+       {Associating, WifiState::CONNECTING},
+       {Dormant, WifiState::DISCONNECTED},
+       {Binding, WifiState::CONNECTING},
+       {Assigned, WifiState::CONNECTED},
+       {Scanning, WifiState::CONNECTING}};
 }
 
 uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObject &response)
 {
-    // TODO: this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest can be mocked
-    LOGINFOMETHOD();
-    response["state"] = static_cast<int>(statusToState.at(m_wifi_status));
-    returnResponse(true);
+   // TODO: this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest can be mocked
+   LOGINFOMETHOD();
+   response["state"] = static_cast<int>(statusToState.at(m_wifi_status));
+   returnResponse(true);
 }
 
 uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonObject &response) const
 {
-    // TODO: this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest can be mocked
-    LOGINFOMETHOD();
-    // todo: call dbus
-    response["ssid"] = string("todo");
-    response["bssid"] = string("n/a");
-    response["rate"] = string("n/a");
-    response["noise"] = string("n/a");
-    response["security"] = string("n/a");
-    response["signalStrength"] = string("n/a");
-    response["frequency"] = string("n/a");
-    returnResponse(false);
+   // this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest can be mocked
+   LOGINFOMETHOD();
+
+   const std::string &wifiInterface = getWifiInterfaceName();
+   bool ret = false;
+   if (!wifiInterface.empty())
+   {
+      std::string netid;
+      if (DBusClient::getInstance().networkconfig1_GetParam(wifiInterface, "netid", netid))
+      {
+         size_t pos = netid.find(":");
+         if (pos != std::string::npos)
+         {
+            response["ssid"] = netid.substr(pos + 1);
+            ret = true;
+         }
+         else
+         {
+            LOGWARN("failed to parse ssid from netid");
+         }
+      }
+      else
+      {
+         LOGWARN("failed to retrieve wifi netid param");
+      }
+   }
+
+   // only 'ssid' is used by Amazon app and needs to be returned; the rest can be empty - at least for now
+   response["bssid"] = string("");
+   response["rate"] = string("");
+   response["noise"] = string("");
+   response["security"] = string("");
+   response["signalStrength"] = string("");
+   response["frequency"] = string("");
+   returnResponse(ret);
 }
 
-void WifiManagerState::statusChanged(const std::string& interface, InterfaceStatus status)
+void WifiManagerState::statusChanged(const std::string &interface, InterfaceStatus status)
 {
-    updateWifiStatus(status);
+   if (interface == getWifiInterfaceName())
+   {
+      updateWifiStatus(status);
+   }
 }
 
 void WifiManagerState::updateWifiStatus(WifiManagerImpl::InterfaceStatus status)
 {
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_wifi_status = status;
-    }
-    // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
-    WifiManager::getInstance().onWIFIStateChanged(statusToState.at(m_wifi_status), false);
+   {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      m_wifi_status = status;
+   }
+   // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
+   WifiManager::getInstance().onWIFIStateChanged(statusToState.at(m_wifi_status), false);
 }
 
 uint32_t WifiManagerState::setEnabled(const JsonObject &parameters, JsonObject &response)
 {
-    LOGINFOMETHOD();
-    returnResponse(false);
+   LOGINFOMETHOD();
+   returnResponse(false);
 }
 
 uint32_t WifiManagerState::getSupportedSecurityModes(const JsonObject &parameters, JsonObject &response)
 {
-    LOGINFOMETHOD();
-    returnResponse(false);
+   LOGINFOMETHOD();
+   returnResponse(false);
 }
 
-const std::string WifiManagerState::fetchWifiInterfaceName() {
-    DBusClient &dbus = DBusClient::getInstance();
-    std::vector<std::string> interfaces = dbus.networkconfig1_GetInterfaces();
-    for (auto &intf : interfaces)
-    {
-        std::string type;
-        if (dbus.networkconfig1_GetParam(intf, "type", type) && type == "wifi")
-        {
-            return intf;
-        }
-    }
-    return "";
+const std::string WifiManagerState::fetchWifiInterfaceName()
+{
+   DBusClient &dbus = DBusClient::getInstance();
+   std::vector<std::string> interfaces = dbus.networkconfig1_GetInterfaces();
+   for (auto &intf : interfaces)
+   {
+      std::string type;
+      if (dbus.networkconfig1_GetParam(intf, "type", type) && type == "wifi")
+      {
+         return intf;
+      }
+   }
+   return "";
 }
 
-const std::string& WifiManagerState::getWifiInterfaceName() {
-    static std::mutex interface_name_mutex;
-    std::lock_guard<std::mutex> lock(interface_name_mutex);
-    static std::string name = WifiManagerState::fetchWifiInterfaceName();
-    return name;
+const std::string &WifiManagerState::getWifiInterfaceName()
+{
+   static std::mutex interface_name_mutex;
+   std::lock_guard<std::mutex> lock(interface_name_mutex);
+   static std::string name = WifiManagerState::fetchWifiInterfaceName();
+   return name;
 }
 /*
 

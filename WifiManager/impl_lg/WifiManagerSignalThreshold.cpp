@@ -48,7 +48,7 @@ namespace {
     }
 
     std::string retrieveValue() {
-        std::string wifiInterface = WifiManagerState::getWifiInterfaceName();
+        const std::string& wifiInterface = WifiManagerState::getWifiInterfaceName();
         if (wifiInterface.empty()) {
             return "";
         }

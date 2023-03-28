@@ -38,12 +38,17 @@ namespace WifiManagerImpl {
             void run();
             void stop();
             
-            void registerStatusChanged(StatusChangedHandler handler);
+            void registerStatusChanged(StatusChangedHandler handler) {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_statusChangedHandler = handler;
+            }
 
             std::vector<std::string> networkconfig1_GetInterfaces();
             bool networkconfig1_GetParam(const std::string& interface, const std::string& name, std::string& res);
-            InterfaceStatus networkconfig1_GetStatus(const std::string& interface);
+            bool networkconfig1_GetStatus(const std::string &interface, InterfaceStatus& out);
             bool wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string,std::string> &params);
+
+            void handleStatusChangedDbusEvent(const std::string& aId,const std::string& aIfaceStatus);
 
         private:
 
@@ -59,8 +64,13 @@ namespace WifiManagerImpl {
             GMainLoop *m_mainLoop {nullptr};
             Networkconfig1 *m_networkconfig1_interface {nullptr};
             Wifimanagement1 *m_wifimanagement1_interface {nullptr};
-            StatusChangedHandler statusChangedHandler {nullptr};
+            StatusChangedHandler m_statusChangedHandler {nullptr};
 
-            std::mutex lock;
+            std::mutex m_mutex;
+            gulong m_handle_networkconfig_gsignal {0};
+            /* seems we do not need any wifimanagement1 signals for now
+            gulong m_handle_wifimanagement_gsignal;
+            */
+
     };
 }
