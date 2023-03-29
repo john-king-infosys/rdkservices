@@ -43,9 +43,12 @@ void WifiManagerState::Initialize()
       // get current wifi status
       InterfaceStatus status;
       const std::string iname = getWifiInterfaceName();
-      if (dbus.networkconfig1_GetStatus(iname, status)) {
+      if (dbus.networkconfig1_GetStatus(iname, status))
+      {
          updateWifiStatus(status);
-      } else {
+      }
+      else
+      {
          LOGWARN("failed to get interface '%s' status", iname.c_str());
       }
    }
@@ -77,7 +80,7 @@ namespace
 
 uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObject &response)
 {
-   // TODO: this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest is not important
+   // this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest is not important
    LOGINFOMETHOD();
    response["state"] = static_cast<int>(statusToState.at(m_wifi_status));
    returnResponse(true);
@@ -156,15 +159,20 @@ const std::string WifiManagerState::fetchWifiInterfaceName()
 {
    DBusClient &dbus = DBusClient::getInstance();
    std::vector<std::string> interfaces;
-   dbus.networkconfig1_GetInterfaces(interfaces);
-   // TODO: check ret val for success !!! also, in other dbus using places
-   for (auto &intf : interfaces)
+   if (dbus.networkconfig1_GetInterfaces(interfaces))
    {
-      std::string type;
-      if (dbus.networkconfig1_GetParam(intf, "type", type) && type == "wifi")
+      for (auto &intf : interfaces)
       {
-         return intf;
+         std::string type;
+         if (dbus.networkconfig1_GetParam(intf, "type", type) && type == "wifi")
+         {
+            return intf;
+         }
       }
+   }
+   else
+   {
+      LOGWARN("failed to fetch interfaces via networkconfig1_GetInterfaces");
    }
    return "";
 }

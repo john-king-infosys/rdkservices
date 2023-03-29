@@ -70,6 +70,7 @@ namespace WifiManagerImpl
 
     void DBusClient::run()
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         if (!m_initialized)
         {
             m_loopThread = std::thread(&DBusClient::dbusWorker, this);
@@ -110,6 +111,7 @@ namespace WifiManagerImpl
 
     void DBusClient::stop()
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_initialized)
         {
             if (m_handle_networkconfig_gsignal != 0)
