@@ -43,7 +43,7 @@ namespace WPEFramework {
             uint32_t getConnectedSSID(const JsonObject& parameters, JsonObject& response) const;
             uint32_t setEnabled(const JsonObject& parameters, JsonObject& response);
             uint32_t getSupportedSecurityModes(const JsonObject& parameters, JsonObject& response);
-            void setWifiStateCache(bool value,WifiState state) {/* not used */}            
+            void setWifiStateCache(bool value,WifiState state) {/* not used */}
             static const std::string& getWifiInterfaceName();
 
         private:

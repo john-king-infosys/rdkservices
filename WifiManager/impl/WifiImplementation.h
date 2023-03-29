@@ -1,4 +1,5 @@
 #include "UtilsIarm.h"
+#include "libIBus.h"
 
 namespace WPEFramework {
     namespace Plugin {

@@ -37,7 +37,7 @@ namespace WifiManagerImpl {
 
             void run();
             void stop();
-            
+
             void registerStatusChanged(StatusChangedHandler handler) {
                 std::lock_guard<std::mutex> lock(m_mutex);
                 m_statusChangedHandler = handler;

@@ -120,7 +120,7 @@ namespace WifiManagerImpl
         {
             if (status == 0)
             {
-                for (int i = 0; i < count; ++i)
+                for (guint i = 0; i < count; ++i)
                 {
                     out.push_back(ids[i]);
                 }

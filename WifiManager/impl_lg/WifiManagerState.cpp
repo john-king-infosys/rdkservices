@@ -23,30 +23,6 @@
 
 using namespace WPEFramework::Plugin;
 using namespace WifiManagerImpl;
-// TODO: why would we need that?
-// m_useWifiStateCache = false;
-// m_wifiStateCache = WifiState::FAILED;
-
-// 1. we need active interface - com.lgi.rdk.utils.networkconfig1.GetActiveInterface
-// 2. we need to check the interface type - com.lgi.rdk.utils.networkconfig1.GetParams(ParamType = "type")
-// 3. if this is wifi, we need to listen for the interface status change - com.lgi.rdk.utils.networkconfig1.StatusChanged
-
-// ..... or .....
-// 1. com.lgi.rdk.utils.networkconfig1.GetInterfaces
-// dbus-send --system --print-reply --dest=com.lgi.rdk.utils.networkconfig1 /com/lgi/rdk/utils/networkconfig1 com.lgi.rdk.utils.networkconfig1.GetInterfaces
-// 2. for each interface, check the interface type; stop when WiFi is found
-//   com.lgi.rdk.utils.networkconfig1.GetParams <arg name="id" direction="in" type="s"/>
-// dbus-send --system --print-reply --dest=com.lgi.rdk.utils.networkconfig1 /com/lgi/rdk/utils/networkconfig1 com.lgi.rdk.utils.networkconfig1.GetParam string:wlan2 string:type
-// or:
-// dbus-send --system --print-reply --dest=com.lgi.rdk.utils.networkconfig1 /com/lgi/rdk/utils/networkconfig1 com.lgi.rdk.utils.networkconfig1.GetParams string:wlan2
-// 3. get wifi status
-// dbus-send --system --print-reply --dest=com.lgi.rdk.utils.networkconfig1 /com/lgi/rdk/utils/networkconfig1 com.lgi.rdk.utils.networkconfig1.GetStatus string:wlan2
-// method return time=1679994562.375126 sender=:1.16 -> destination=:1.513 serial=133 reply_serial=2
-// int32 0
-// string "Disabled"
-// 4. register for status changed & filter on type
-// StatusChanged com.lgi.rdk.utils.networkconfig1.StatusChanged
-// dbus-monitor "type='signal',interface='com.lgi.rdk.utils.networkconfig1',member='StatusChanged',path='/com/lgi/rdk/utils/networkconfig1'"
 
 WifiManagerState::WifiManagerState()
 {
@@ -101,7 +77,7 @@ namespace
 
 uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObject &response)
 {
-   // TODO: this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest can be mocked
+   // TODO: this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest is not important
    LOGINFOMETHOD();
    response["state"] = static_cast<int>(statusToState.at(m_wifi_status));
    returnResponse(true);
@@ -109,7 +85,7 @@ uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObj
 
 uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonObject &response) const
 {
-   // this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest can be mocked
+   // this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest is not important
    LOGINFOMETHOD();
 
    const std::string &wifiInterface = getWifiInterfaceName();
@@ -136,7 +112,7 @@ uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonOb
       }
    }
 
-   // only 'ssid' is used by Amazon app and needs to be returned; the rest can be empty - at least for now
+   // only 'ssid' is used by Amazon app and needs to be returned; the rest can be empty for now
    response["bssid"] = string("");
    response["rate"] = string("");
    response["noise"] = string("");
@@ -178,20 +154,17 @@ uint32_t WifiManagerState::getSupportedSecurityModes(const JsonObject &parameter
 
 const std::string WifiManagerState::fetchWifiInterfaceName()
 {
-   printf("xaxa %s:%d\n", __FUNCTION__, __LINE__); fflush(stdout);
    DBusClient &dbus = DBusClient::getInstance();
    std::vector<std::string> interfaces;
    dbus.networkconfig1_GetInterfaces(interfaces);
    // TODO: check ret val for success !!! also, in other dbus using places
    for (auto &intf : interfaces)
-   {      
+   {
       std::string type;
       if (dbus.networkconfig1_GetParam(intf, "type", type) && type == "wifi")
       {
-         printf("xaxa %s:%d PICKED: %s\n", __FUNCTION__, __LINE__, intf.c_str()); fflush(stdout);
          return intf;
       }
-      printf("xaxa %s:%d NOT PICKED interface: %s type: %s\n", __FUNCTION__, __LINE__, intf.c_str(), type.c_str()); fflush(stdout);
    }
    return "";
 }

@@ -43,7 +43,7 @@ namespace {
         } else if (quality <= 0) {
             return "-100.0";
         } else {
-            return std::to_string((quality - 200)/2.f); // static_cast<std::stringstream&>(std::stringstream() << db).str();
+            return std::to_string((quality - 200)/2.f);
         }
     }
 
