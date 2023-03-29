@@ -37,7 +37,7 @@ namespace WifiManagerImpl
         GVariantIter iter;
         g_variant_iter_init(&iter, parameters);
 
-        DBusClient* client = static_cast<DBusClient *>(user_data);
+        DBusClient *client = static_cast<DBusClient *>(user_data);
 
         if (signal_name == "StatusChanged" && num_params == 2)
         {
@@ -54,8 +54,14 @@ namespace WifiManagerImpl
     void DBusClient::handleStatusChangedDbusEvent(const std::string &aId, const std::string &aIfaceStatus)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_statusChangedHandler) {
-            m_statusChangedHandler(aId, statusFromString.at(aIfaceStatus));
+        if (m_statusChangedHandler)
+        {
+            auto status = statusFromString.find(aIfaceStatus);
+            if (status != statusFromString.end()) {
+                m_statusChangedHandler(aId, status->second);
+            } else {
+                LOGERR("networkconfig1 StatusChanged event received with unknown status string: %s", aIfaceStatus.c_str());
+            }
         }
     }
 
@@ -73,8 +79,8 @@ namespace WifiManagerImpl
                 {
                     LOGERR("Cannot connect to networkconfig1 g-signal");
                 }
-                
-                /* seems we do not need any wifimanagement1 signals for now                  
+
+                /* seems we do not need any wifimanagement1 signals for now
                 m_handle_wifimanagement_gsignal = g_signal_connect(m_wifimanagement1_interface->proxy, "g-signal", G_CALLBACK(handle_dbus_event), this);
                 if (!m_handle_wifimanagement_gsignal)
                 {
@@ -99,20 +105,90 @@ namespace WifiManagerImpl
         return std::vector<std::string>();
     }
 
-    bool DBusClient::networkconfig1_GetParam(const std::string &interface, const std::string &name, std::string &res)
+    bool DBusClient::networkconfig1_GetParam(const std::string &interface, const std::string &paramName, std::string &res)
     {
-        res = "";
-        return false;
+        gint status = 0;
+        gchar *paramValue{nullptr};
+        GError *error{nullptr};
+        bool ret = false;
+        if (
+            com_lgi_rdk_utils_networkconfig1_call_get_param_sync(
+                m_networkconfig1_interface,
+                interface.c_str(),
+                paramName.c_str(),
+                &status,
+                &paramValue,
+                nullptr,
+                &error))
+        {
+            if (status == 0)
+            {
+                res = paramValue;
+                ret = true;
+            }
+            else
+            {
+                LOGERR("Failed to call networkconfig1_call_get_param_sync - status: %d", status);
+            }
+        }
+        else
+        {
+            LOGERR("Failed to call networkconfig1_call_get_param_sync - %s", error ? error->message : "(unknown)");
+        }
+        if (error)
+            g_error_free(error);
+        if (paramValue)
+            g_free(paramValue);
+        return ret;
     }
 
-    bool DBusClient::networkconfig1_GetStatus(const std::string &interface, InterfaceStatus& out)
+    bool DBusClient::networkconfig1_GetStatus(const std::string &interface, InterfaceStatus &out)
     {
-        out = InterfaceStatus::Disconnected;
-        return false;
+        gint status = 0;
+        gchar *ifaceStatus{nullptr};
+        GError *error{nullptr};
+        bool ret = false;
+        if (
+            com_lgi_rdk_utils_networkconfig1_call_get_status_sync(
+                m_networkconfig1_interface,
+                interface.c_str(),
+                &status,
+                &ifaceStatus,
+                nullptr,
+                &error))
+        {
+            if (status == 0)
+            {
+                auto it = statusFromString.find(ifaceStatus);
+                if (it != statusFromString.end())
+                {
+                    out = it->second;
+                    ret = true;
+                }
+                else
+                {
+                    LOGERR("networkconfig1_call_get_status_sync returned unknown status string: %s", ifaceStatus);
+                }
+            }
+            else
+            {
+                LOGERR("Failed to call networkconfig1_call_get_status_sync - status: %d", status);
+            }
+        }
+        else
+        {
+            LOGERR("Failed to call networkconfig1_call_get_status_sync - %s", error ? error->message : "(unknown)");
+        }
+        if (error)
+            g_error_free(error);
+        if (ifaceStatus)
+            g_free(ifaceStatus);
+        return ret;
     }
 
     bool DBusClient::wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string, std::string> &params)
     {
+        // TODO: review for leaks!
         gint status = 0;
         guint count = 0;
         GVariant *out_params{nullptr};

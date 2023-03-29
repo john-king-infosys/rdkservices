@@ -21,43 +21,22 @@ Networkconfig1 *networkconfig1_proxy_new_for_bus_sync (
     GCancellable        *cancellable,
     GError             **error);
 
-gboolean networkconfig1_call_get_interfaces_sync (
-    Networkconfig1 *proxy,
-    guint *out_count,
-    gchar ***out_ids,
-    GCancellable *cancellable,
-    GError **error);
-
-gboolean networkconfig1_call_get_params_sync (
+gboolean
+com_lgi_rdk_utils_networkconfig1_call_get_status_sync (
     Networkconfig1 *proxy,
     const gchar *arg_id,
     gint *out_status,
-    guint *out_count,
-    GVariant **out_params,
+    gchar **out_ifaceStatus,
     GCancellable *cancellable,
     GError **error);
 
-
-gboolean networkconfig1_call_get_active_interface_sync (
-    Networkconfig1 *proxy,
-    gchar **out_id,
-    gint *out_status,
-    GCancellable *cancellable,
-    GError **error);
-
-gboolean networkconfig1_call_is_enabled_sync (
+gboolean
+com_lgi_rdk_utils_networkconfig1_call_get_param_sync (
     Networkconfig1 *proxy,
     const gchar *arg_id,
+    const gchar *arg_paramName,
     gint *out_status,
-    gboolean *out_enabled,
-    GCancellable *cancellable,
-    GError **error);
-
-gboolean networkconfig1_call_enable_sync (
-    Networkconfig1 *proxy,
-    const gchar *arg_id,
-    gboolean arg_enable,
-    gint *out_status,
+    gchar **out_paramValue,
     GCancellable *cancellable,
     GError **error);
 

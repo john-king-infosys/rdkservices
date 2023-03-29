@@ -44,6 +44,7 @@ com_lgi_rdk_utils_wifimanagement1_proxy_new_for_bus_sync (
     }
 }
 
+/* copied from gdbus-codegen generated version; the only change is in first arg to g_dbus_proxy_call_sync */
 /**
  * com_lgi_rdk_utils_wifimanagement1_call_get_ssidparams_sync:
  * @proxy: Wifimanagement1 proxy.

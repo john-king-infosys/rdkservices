@@ -44,8 +44,7 @@ Networkconfig1 *networkconfig1_proxy_new_for_bus_sync(
     }
 }
 
-/* networkconfig1_call_enable_sync method is almost directly copied from gdbus-codegen generated version
-   the only change is in first arg to g_dbus_proxy_call_sync */
+/* copied from gdbus-codegen generated version; the only change is in first arg to g_dbus_proxy_call_sync */
 /**
  * com_lgi_rdk_utils_networkconfig1_call_get_status_sync:
  * @proxy: A #ComLgiRdkUtilsNetworkconfig1Proxy.
@@ -90,160 +89,50 @@ _out:
   return _ret != NULL;
 }
 
-/* networkconfig1_call_get_interfaces_sync method is almost directly copied from gdbus-codegen generated version
-   the only change is in first arg to g_dbus_proxy_call_sync */
-gboolean networkconfig1_call_get_interfaces_sync(
-    Networkconfig1 *proxy,
-    guint *out_count,
-    gchar ***out_ids,
-    GCancellable *cancellable,
-    GError **error)
-{
-    GVariant *_ret;
-    _ret = g_dbus_proxy_call_sync(proxy->proxy,
-                                  "GetInterfaces",
-                                  g_variant_new("()"),
-                                  G_DBUS_CALL_FLAGS_NONE,
-                                  -1,
-                                  cancellable,
-                                  error);
-    if (_ret == NULL)
-        goto _out;
-    g_variant_get(_ret,
-                  "(u^as)",
-                  out_count,
-                  out_ids);
-    g_variant_unref(_ret);
-_out:
-    return _ret != NULL;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-/* networkconfig1_call_get_params_sync method is almost directly copied from gdbus-codegen generated version
-   the only change is in first arg to g_dbus_proxy_call_sync */
-gboolean networkconfig1_call_get_params_sync(
+/* copied from gdbus-codegen generated version; the only change is in first arg to g_dbus_proxy_call_sync */
+/**
+ * com_lgi_rdk_utils_networkconfig1_call_get_param_sync:
+ * @proxy: A #ComLgiRdkUtilsNetworkconfig1Proxy.
+ * @arg_id: Argument to pass with the method invocation.
+ * @arg_paramName: Argument to pass with the method invocation.
+ * @out_status: (out): Return location for return parameter or %NULL to ignore.
+ * @out_paramValue: (out): Return location for return parameter or %NULL to ignore.
+ * @cancellable: (nullable): A #GCancellable or %NULL.
+ * @error: Return location for error or %NULL.
+ *
+ * Synchronously invokes the <link linkend="gdbus-method-com-lgi-rdk-utils-networkconfig1.GetParam">GetParam()</link> D-Bus method on @proxy. The calling thread is blocked until a reply is received.
+ *
+ * See com_lgi_rdk_utils_networkconfig1_call_get_param() for the asynchronous version of this method.
+ *
+ * Returns: (skip): %TRUE if the call succeded, %FALSE if @error is set.
+ */
+gboolean
+com_lgi_rdk_utils_networkconfig1_call_get_param_sync (
     Networkconfig1 *proxy,
     const gchar *arg_id,
+    const gchar *arg_paramName,
     gint *out_status,
-    guint *out_count,
-    GVariant **out_params,
+    gchar **out_paramValue,
     GCancellable *cancellable,
     GError **error)
 {
-    GVariant *_ret;
-    _ret = g_dbus_proxy_call_sync(proxy->proxy,
-                                  "GetParams",
-                                  g_variant_new("(s)",
-                                                arg_id),
-                                  G_DBUS_CALL_FLAGS_NONE,
-                                  -1,
-                                  cancellable,
-                                  error);
-    if (_ret == NULL)
-        goto _out;
-    g_variant_get(_ret,
-                  "(iu@a{ss})",
-                  out_status,
-                  out_count,
-                  out_params);
-    g_variant_unref(_ret);
+  GVariant *_ret;
+  _ret = g_dbus_proxy_call_sync (proxy->proxy,
+    "GetParam",
+    g_variant_new ("(ss)",
+                   arg_id,
+                   arg_paramName),
+    G_DBUS_CALL_FLAGS_NONE,
+    -1,
+    cancellable,
+    error);
+  if (_ret == NULL)
+    goto _out;
+  g_variant_get (_ret,
+                 "(is)",
+                 out_status,
+                 out_paramValue);
+  g_variant_unref (_ret);
 _out:
-    return _ret != NULL;
+  return _ret != NULL;
 }
-
-/* networkconfig1_call_get_active_interface_sync method is almost directly copied from gdbus-codegen generated version
-   the only change is in first arg to g_dbus_proxy_call_sync */
-gboolean networkconfig1_call_get_active_interface_sync(
-    Networkconfig1 *proxy,
-    gchar **out_id,
-    gint *out_status,
-    GCancellable *cancellable,
-    GError **error)
-{
-    GVariant *_ret;
-    _ret = g_dbus_proxy_call_sync(proxy->proxy,
-                                  "GetActiveInterface",
-                                  g_variant_new("()"),
-                                  G_DBUS_CALL_FLAGS_NONE,
-                                  -1,
-                                  cancellable,
-                                  error);
-    if (_ret == NULL)
-        goto _out;
-    g_variant_get(_ret,
-                  "(si)",
-                  out_id,
-                  out_status);
-    g_variant_unref(_ret);
-_out:
-    return _ret != NULL;
-}
-
-/* networkconfig1_call_is_enabled_sync method is almost directly copied from gdbus-codegen generated version
-   the only change is in first arg to g_dbus_proxy_call_sync */
-gboolean networkconfig1_call_is_enabled_sync(
-    Networkconfig1 *proxy,
-    const gchar *arg_id,
-    gint *out_status,
-    gboolean *out_enabled,
-    GCancellable *cancellable,
-    GError **error)
-{
-    GVariant *_ret;
-    _ret = g_dbus_proxy_call_sync(proxy->proxy,
-                                  "IsEnabled",
-                                  g_variant_new("(s)",
-                                                arg_id),
-                                  G_DBUS_CALL_FLAGS_NONE,
-                                  -1,
-                                  cancellable,
-                                  error);
-    if (_ret == NULL)
-        goto _out;
-    g_variant_get(_ret,
-                  "(ib)",
-                  out_status,
-                  out_enabled);
-    g_variant_unref(_ret);
-_out:
-    return _ret != NULL;
-}
-
-/* networkconfig1_call_enable_sync method is almost directly copied from gdbus-codegen generated version
-   the only change is in first arg to g_dbus_proxy_call_sync */
-gboolean networkconfig1_call_enable_sync(
-    Networkconfig1 *proxy,
-    const gchar *arg_id,
-    gboolean arg_enable,
-    gint *out_status,
-    GCancellable *cancellable,
-    GError **error)
-{
-    GVariant *_ret;
-    _ret = g_dbus_proxy_call_sync(proxy->proxy,
-                                  "Enable",
-                                  g_variant_new("(sb)",
-                                                arg_id,
-                                                arg_enable),
-                                  G_DBUS_CALL_FLAGS_NONE,
-                                  -1,
-                                  cancellable,
-                                  error);
-    if (_ret == NULL)
-        goto _out;
-    g_variant_get(_ret,
-                  "(i)",
-                  out_status);
-    g_variant_unref(_ret);
-_out:
-    return _ret != NULL;
-}
-
