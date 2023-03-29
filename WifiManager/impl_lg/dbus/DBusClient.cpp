@@ -269,7 +269,7 @@ namespace WifiManagerImpl
 
     bool DBusClient::wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string, std::string> &params)
     {
-        // TODO: review for leaks!
+        bool ret = false;
         gint status = 0;
         guint count = 0;
         GVariant *out_params{nullptr};
@@ -288,37 +288,33 @@ namespace WifiManagerImpl
             if (status)
             {
                 LOGERR("GetSSIDParams failed; status: %u error: '%s'", status, error ? error->message : "(unknown)");
+            }
+            else
+            {
+                GVariantIter iter;
+                gchar *key;
+                gchar *value;
+
                 if (out_params)
                 {
-                    g_variant_unref(out_params);
+                    g_variant_iter_init(&iter, out_params);
+                    while (g_variant_iter_loop(&iter, "{ss}", &key, &value))
+                    {
+                        params[key] = value;
+                    }
                 }
-                return false;
+                ret = true;
             }
-            GVariantIter iter;
-            gchar *key;
-            gchar *value;
-
-            if (out_params)
-            {
-                g_variant_iter_init(&iter, out_params);
-                while (g_variant_iter_loop(&iter, "{ss}", &key, &value))
-                {
-                    params[key] = value;
-                }
-            }
-            if (out_params)
-            {
-                g_variant_unref(out_params);
-            }
-            return true;
         }
         else
         {
             LOGERR("Failed to call wifimanagement1_call_get_ssidparams_sync - %s", error ? error->message : "(unknown)");
-            if (error)
-                g_error_free(error);
-            return false;
         }
+        if (error)
+            g_error_free(error);
+        if (out_params)
+            g_variant_unref(out_params);
+        return ret;
     }
 
     void DBusClient::dbusWorker()

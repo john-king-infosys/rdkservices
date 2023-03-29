@@ -82,7 +82,16 @@ uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObj
 {
    // this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest is not important
    LOGINFOMETHOD();
-   response["state"] = static_cast<int>(statusToState.at(m_wifi_status));
+   auto lookup = statusToState.find(m_wifi_status);
+   if (lookup != statusToState.end())
+   {
+      response["state"] = static_cast<int>(lookup->second);
+   }
+   else
+   {
+      LOGWARN("unknown state: %d", m_wifi_status);
+      returnResponse(false);
+   }
    returnResponse(true);
 }
 
@@ -139,8 +148,16 @@ void WifiManagerState::updateWifiStatus(WifiManagerImpl::InterfaceStatus status)
       std::lock_guard<std::mutex> lock(m_mutex);
       m_wifi_status = status;
    }
-   // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
-   WifiManager::getInstance().onWIFIStateChanged(statusToState.at(m_wifi_status), false);
+   auto lookup = statusToState.find(m_wifi_status);
+   if (lookup != statusToState.end())
+   {
+      // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
+      WifiManager::getInstance().onWIFIStateChanged(lookup->second, false);
+   }
+   else
+   {
+      LOGWARN("unknown state: %d", m_wifi_status);
+   }
 }
 
 uint32_t WifiManagerState::setEnabled(const JsonObject &parameters, JsonObject &response)

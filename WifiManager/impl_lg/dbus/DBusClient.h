@@ -13,9 +13,11 @@
 #include "networkconfig1_dbus_api.h"
 #include "wifimanagement1_dbus_api.h"
 
-namespace WifiManagerImpl {
+namespace WifiManagerImpl
+{
 
-    enum InterfaceStatus {
+    enum InterfaceStatus
+    {
         Disabled,
         Disconnected,
         Associating,
@@ -25,52 +27,52 @@ namespace WifiManagerImpl {
         Scanning
     };
 
-    class DBusClient {
-        public:
+    class DBusClient
+    {
+    public:
+        using StatusChangedHandler = std::function<void(const std::string &interface, InterfaceStatus state)>;
 
-            using StatusChangedHandler = std::function<void(const std::string& interface, InterfaceStatus state)>;
+        static DBusClient &getInstance()
+        {
+            static DBusClient client;
+            return client;
+        }
 
-            static DBusClient& getInstance() {
-                static DBusClient client;
-                return client;
-            }
+        void run();
+        void stop();
 
-            void run();
-            void stop();
+        void registerStatusChanged(StatusChangedHandler handler)
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_statusChangedHandler = handler;
+        }
 
-            void registerStatusChanged(StatusChangedHandler handler) {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                m_statusChangedHandler = handler;
-            }
+        bool networkconfig1_GetInterfaces(std::vector<std::string> &ret);
+        bool networkconfig1_GetParam(const std::string &interface, const std::string &name, std::string &res);
+        bool networkconfig1_GetStatus(const std::string &interface, InterfaceStatus &out);
+        bool wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string, std::string> &params);
 
-            bool networkconfig1_GetInterfaces(std::vector<std::string>& ret);
-            bool networkconfig1_GetParam(const std::string& interface, const std::string& name, std::string& res);
-            bool networkconfig1_GetStatus(const std::string &interface, InterfaceStatus& out);
-            bool wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string,std::string> &params);
+        void handleStatusChangedDbusEvent(const std::string &aId, const std::string &aIfaceStatus);
 
-            void handleStatusChangedDbusEvent(const std::string& aId,const std::string& aIfaceStatus);
+    private:
+        DBusClient();
+        ~DBusClient() = default;
 
-        private:
+        void dbusWorker();
 
-            DBusClient();
-            ~DBusClient() = default;
+        std::thread m_loopThread;
+        std::promise<bool> m_initialized_future;
+        std::atomic_bool m_initialized{false};
+        GMainContext *m_mainContext{nullptr};
+        GMainLoop *m_mainLoop{nullptr};
+        Networkconfig1 *m_networkconfig1_interface{nullptr};
+        Wifimanagement1 *m_wifimanagement1_interface{nullptr};
+        StatusChangedHandler m_statusChangedHandler{nullptr};
 
-            void dbusWorker();
-
-            std::thread m_loopThread;
-            std::promise<bool> m_initialized_future;
-            std::atomic_bool m_initialized {false};
-            GMainContext *m_mainContext {nullptr};
-            GMainLoop *m_mainLoop {nullptr};
-            Networkconfig1 *m_networkconfig1_interface {nullptr};
-            Wifimanagement1 *m_wifimanagement1_interface {nullptr};
-            StatusChangedHandler m_statusChangedHandler {nullptr};
-
-            std::mutex m_mutex;
-            gulong m_handle_networkconfig_gsignal {0};
-            /* seems we do not need any wifimanagement1 signals for now
-            gulong m_handle_wifimanagement_gsignal;
-            */
-
+        std::mutex m_mutex;
+        gulong m_handle_networkconfig_gsignal{0};
+        /* seems we do not need any wifimanagement1 signals for now
+        gulong m_handle_wifimanagement_gsignal;
+        */
     };
 }
