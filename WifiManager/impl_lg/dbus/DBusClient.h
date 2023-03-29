@@ -43,7 +43,7 @@ namespace WifiManagerImpl {
                 m_statusChangedHandler = handler;
             }
 
-            std::vector<std::string> networkconfig1_GetInterfaces();
+            bool networkconfig1_GetInterfaces(std::vector<std::string>& ret);
             bool networkconfig1_GetParam(const std::string& interface, const std::string& name, std::string& res);
             bool networkconfig1_GetStatus(const std::string &interface, InterfaceStatus& out);
             bool wifimanagement1_GetSSIDParams(const std::string &ssid, const std::string &netid, std::map<std::string,std::string> &params);

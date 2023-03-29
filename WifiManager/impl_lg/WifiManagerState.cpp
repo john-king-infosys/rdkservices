@@ -50,6 +50,10 @@ using namespace WifiManagerImpl;
 
 WifiManagerState::WifiManagerState()
 {
+}
+
+void WifiManagerState::Initialize()
+{
    DBusClient &dbus = DBusClient::getInstance();
    if (getWifiInterfaceName().empty())
    {
@@ -174,15 +178,20 @@ uint32_t WifiManagerState::getSupportedSecurityModes(const JsonObject &parameter
 
 const std::string WifiManagerState::fetchWifiInterfaceName()
 {
+   printf("xaxa %s:%d\n", __FUNCTION__, __LINE__); fflush(stdout);
    DBusClient &dbus = DBusClient::getInstance();
-   std::vector<std::string> interfaces = dbus.networkconfig1_GetInterfaces();
+   std::vector<std::string> interfaces;
+   dbus.networkconfig1_GetInterfaces(interfaces);
+   // TODO: check ret val for success !!! also, in other dbus using places
    for (auto &intf : interfaces)
-   {
+   {      
       std::string type;
       if (dbus.networkconfig1_GetParam(intf, "type", type) && type == "wifi")
       {
+         printf("xaxa %s:%d PICKED: %s\n", __FUNCTION__, __LINE__, intf.c_str()); fflush(stdout);
          return intf;
       }
+      printf("xaxa %s:%d NOT PICKED interface: %s type: %s\n", __FUNCTION__, __LINE__, intf.c_str(), type.c_str()); fflush(stdout);
    }
    return "";
 }
@@ -194,69 +203,3 @@ const std::string &WifiManagerState::getWifiInterfaceName()
    static std::string name = WifiManagerState::fetchWifiInterfaceName();
    return name;
 }
-/*
-
-switching from eht2 to wlan2 and back:
-
-root@E0B7B1-APPSTB-301000003204:~# dbus-monitor --system type=signal,interface=com.lgi.rdk.utils.networkconfig1,member='StatusChanged'
-
-signal time=1679995849.373632 sender=:1.16 -> destination=(null destination) serial=732 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "eth2"
-   string "Disconnected"
-signal time=1679995854.349952 sender=:1.16 -> destination=(null destination) serial=785 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Disconnected"
-signal time=1679995854.418572 sender=:1.16 -> destination=(null destination) serial=795 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Scanning"
-signal time=1679995856.740837 sender=:1.16 -> destination=(null destination) serial=851 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Disconnected"
-signal time=1679995857.095259 sender=:1.16 -> destination=(null destination) serial=938 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Associating"
-signal time=1679995857.208994 sender=:1.16 -> destination=(null destination) serial=950 path=/co[ 1697.092260] set wnm_keepalives_max_idle failed : -2
-m/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Dormant"
-signal time=1679995858.525842 sender=:1.16 -> destination=(null destination) serial=987 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Binding"
-signal time=1679995859.197049 sender=:1.16 -> destination=(null destination) serial=997 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Assigned"
-signal time=1679995878.496053 sender=:1.16 -> destination=(null destination) serial=1075 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "eth2"
-   string "Dormant"
-signal time=1679995878.530651 sender=:1.16 -> destination=(null destination) serial=1083 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Dormant"
-signal time=1679995878.780605 sender=:1.16 -> destination=(null destination) serial=1084 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "eth2"
-   string "Binding"
-signal time=1679995879.136574 sender=:1.16 -> destination=(null destination) serial=1102 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "eth2"
-   string "Assigned"
-signal time=1679995879.280652 sender=:1.16 -> destination=(null destination) serial=1121 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Disconnected"
-signal time=1679995880.567282 sender=:1.16 -> destination=(null destination) serial=1175 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Disabled"
-signal time=1679995880.919561 sender=:1.16 -> destination=(null destination) serial=1213 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Disconnected"
-signal time=1679995880.996979 sender=:1.16 -> destination=(null destination) serial=1223 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Scanning"
-signal time=1679995883.385561 sender=:1.16 -> destination=(null destination) serial=1305 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Disconnected"
-signal time=1679995883.754459 sender=:1.16 -> destination=(null destination) serial=1413 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Associating"
-signal time=1679995883.954857 sender=:1.16 -> destination=(null destination) serial=1421 path=/com/lgi/rdk/utils/networkconfig1; interface=com.lgi.rdk.utils.networkconfig1; member=StatusChanged
-   string "wlan2"
-   string "Dormant"
-
-*/

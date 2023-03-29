@@ -57,9 +57,12 @@ namespace WifiManagerImpl
         if (m_statusChangedHandler)
         {
             auto status = statusFromString.find(aIfaceStatus);
-            if (status != statusFromString.end()) {
+            if (status != statusFromString.end())
+            {
                 m_statusChangedHandler(aId, status->second);
-            } else {
+            }
+            else
+            {
                 LOGERR("networkconfig1 StatusChanged event received with unknown status string: %s", aIfaceStatus.c_str());
             }
         }
@@ -100,9 +103,43 @@ namespace WifiManagerImpl
         throw "todo";
     }
 
-    std::vector<std::string> DBusClient::networkconfig1_GetInterfaces()
+    bool DBusClient::networkconfig1_GetInterfaces(std::vector<std::string> &out)
     {
-        return std::vector<std::string>();
+        gint status = 0;
+        GError *error{nullptr};
+        bool ret = false;
+        guint count = 0;
+        gchar **ids{nullptr};
+
+        if (com_lgi_rdk_utils_networkconfig1_call_get_interfaces_sync(
+                m_networkconfig1_interface,
+                &count,
+                &ids,
+                nullptr,
+                &error))
+        {
+            if (status == 0)
+            {
+                for (int i = 0; i < count; ++i)
+                {
+                    out.push_back(ids[i]);
+                }
+                ret = true;
+            }
+            else
+            {
+                LOGERR("Failed to call networkconfig1_call_get_interfaces_sync - status: %d", status);
+            }
+        }
+        else
+        {
+            LOGERR("Failed to call networkconfig1_call_get_interfaces_sync - %s", error ? error->message : "(unknown)");
+        }
+        if (error)
+            g_error_free(error);
+        if (ids)
+            g_free(ids);
+        return ret;
     }
 
     bool DBusClient::networkconfig1_GetParam(const std::string &interface, const std::string &paramName, std::string &res)

@@ -46,6 +46,7 @@ if(${PLUGIN_WIFI_IMPL} STREQUAL "impl_lg")
         PRIVATE
                 ${LIBGIO_LIBRARIES}
                 ${LIBGLIB_LIBRARIES})
+        add_definitions( -DIMPL_LGI )
 endif()
 
 set_source_files_properties(

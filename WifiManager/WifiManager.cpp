@@ -97,18 +97,21 @@ namespace WPEFramework
         }
 
         const string WifiManager::Initialize(PluginHost::IShell* service)
-        {            
-            WifiImplementation::init();
-
+        {
             if (instance != nullptr) {
                 LOGERR("Expecting 'instance' to be initially unset; two instances of the plugin?");
                 return string("Expecting m_instance to be initially unset");
             }
             instance = this;
 
+            WifiImplementation::init();
+
             // Initialize other parts of the implementation
             string const scanMessage = wifiScan.Initialize(service);
             string const eventsMessage = wifiEvents.Initialize(service);
+#ifdef IMPL_LGI
+            wifiState.Initialize();
+#endif
 
             // Combine their error messages (if any)
             return scanMessage + eventsMessage;

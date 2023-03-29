@@ -136,3 +136,45 @@ com_lgi_rdk_utils_networkconfig1_call_get_param_sync (
 _out:
   return _ret != NULL;
 }
+
+/* copied from gdbus-codegen generated version; the only change is in first arg to g_dbus_proxy_call_sync */
+/**
+ * com_lgi_rdk_utils_networkconfig1_call_get_interfaces_sync:
+ * @proxy: A #ComLgiRdkUtilsNetworkconfig1Proxy.
+ * @out_count: (out): Return location for return parameter or %NULL to ignore.
+ * @out_ids: (out) (array zero-terminated=1): Return location for return parameter or %NULL to ignore.
+ * @cancellable: (nullable): A #GCancellable or %NULL.
+ * @error: Return location for error or %NULL.
+ *
+ * Synchronously invokes the <link linkend="gdbus-method-com-lgi-rdk-utils-networkconfig1.GetInterfaces">GetInterfaces()</link> D-Bus method on @proxy. The calling thread is blocked until a reply is received.
+ *
+ * See com_lgi_rdk_utils_networkconfig1_call_get_interfaces() for the asynchronous version of this method.
+ *
+ * Returns: (skip): %TRUE if the call succeded, %FALSE if @error is set.
+ */
+gboolean
+com_lgi_rdk_utils_networkconfig1_call_get_interfaces_sync (
+    Networkconfig1 *proxy,
+    guint *out_count,
+    gchar ***out_ids,
+    GCancellable *cancellable,
+    GError **error)
+{
+  GVariant *_ret;
+  _ret = g_dbus_proxy_call_sync (proxy->proxy,
+    "GetInterfaces",
+    g_variant_new ("()"),
+    G_DBUS_CALL_FLAGS_NONE,
+    -1,
+    cancellable,
+    error);
+  if (_ret == NULL)
+    goto _out;
+  g_variant_get (_ret,
+                 "(u^as)",
+                 out_count,
+                 out_ids);
+  g_variant_unref (_ret);
+_out:
+  return _ret != NULL;
+}
