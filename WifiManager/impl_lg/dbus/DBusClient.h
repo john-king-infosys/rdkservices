@@ -59,7 +59,7 @@ namespace WifiManagerImpl {
 
             std::thread m_loopThread;
             std::promise<bool> m_initialized_future;
-            bool m_initialized {false};
+            std::atomic_bool m_initialized {false};
             GMainContext *m_mainContext {nullptr};
             GMainLoop *m_mainLoop {nullptr};
             Networkconfig1 *m_networkconfig1_interface {nullptr};

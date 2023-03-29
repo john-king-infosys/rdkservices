@@ -98,9 +98,51 @@ namespace WifiManagerImpl
         }
     }
 
+    template <class T>
+    static void release_dbus_interface(T *interface)
+    {
+        if (interface->proxy)
+            g_object_unref(interface->proxy);
+        g_dbus_connection_flush_sync(interface->connection, NULL, NULL);
+        g_object_unref(interface->connection);
+        g_free(interface);
+    }
+
     void DBusClient::stop()
     {
-        throw "todo";
+        if (m_initialized)
+        {
+            if (m_handle_networkconfig_gsignal != 0)
+            {
+                g_signal_handler_disconnect(m_networkconfig1_interface->proxy, m_handle_networkconfig_gsignal);
+            }
+
+            release_dbus_interface(m_networkconfig1_interface);
+            release_dbus_interface(m_wifimanagement1_interface);
+
+            m_networkconfig1_interface = nullptr;
+            m_wifimanagement1_interface = nullptr;
+
+            g_main_context_invoke(
+                m_mainContext, +[](gpointer ptr) -> gboolean
+                {
+                LOGINFO("LgiNetworkClient::Stop() quit main loop TID: %u", gettid());
+                g_main_loop_quit((GMainLoop*)ptr);
+                return FALSE; },
+                (gpointer)m_mainLoop);
+
+            if (m_loopThread.joinable())
+            {
+                m_loopThread.join();
+            }
+            else
+            {
+                LOGERR("Worker thread should be joinable");
+            }
+            LOGINFO("signals disconnected");
+
+            m_initialized = false;
+        }
     }
 
     bool DBusClient::networkconfig1_GetInterfaces(std::vector<std::string> &out)
