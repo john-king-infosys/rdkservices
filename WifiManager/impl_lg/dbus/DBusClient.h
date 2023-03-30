@@ -43,7 +43,7 @@ namespace WifiManagerImpl
 
         void registerStatusChanged(StatusChangedHandler handler)
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
+            std::lock_guard<std::mutex> lock(m_event_mutex);
             m_statusChangedHandler = handler;
         }
 
@@ -61,15 +61,20 @@ namespace WifiManagerImpl
         void dbusWorker();
 
         std::thread m_loopThread;
-        std::promise<bool> m_initialized_future;
-        std::atomic_bool m_initialized{false};
-        GMainContext *m_mainContext{nullptr};
-        GMainLoop *m_mainLoop{nullptr};
-        Networkconfig1 *m_networkconfig1_interface{nullptr};
-        Wifimanagement1 *m_wifimanagement1_interface{nullptr};
-        StatusChangedHandler m_statusChangedHandler{nullptr};
 
-        std::mutex m_mutex;
+        struct DbusData {
+            GMainContext *m_mainContext{nullptr};
+            GMainLoop *m_mainLoop{nullptr};
+            Networkconfig1 *m_networkconfig1_interface{nullptr};
+            Wifimanagement1 *m_wifimanagement1_interface{nullptr};
+        };
+
+        std::promise<DbusData*> m_dbus_data_future;
+        DbusData* m_dbus_data{nullptr};
+
+        std::mutex m_event_mutex;
+        StatusChangedHandler m_statusChangedHandler {nullptr};
+
         gulong m_handle_networkconfig_gsignal{0};
         /* seems we do not need any wifimanagement1 signals for now
         gulong m_handle_wifimanagement_gsignal;

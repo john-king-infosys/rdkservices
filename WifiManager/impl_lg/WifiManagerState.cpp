@@ -68,6 +68,7 @@ namespace
    `4`: CONNECTING - The device is attempting to connect to a network
    `5`: CONNECTED - The device is successfully connected to a network
    */
+   // for the moment, only state we need is 'CONNECTED' (the only state that Amazon app needs)
    const std::map<InterfaceStatus, WifiState> statusToState{
        {Disabled, WifiState::DISABLED},
        {Disconnected, WifiState::DISCONNECTED},
@@ -82,16 +83,7 @@ uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObj
 {
    // this is used by Amazon, but only 'state' is used by Amazon app and needs to be provided; the rest is not important
    LOGINFOMETHOD();
-   auto lookup = statusToState.find(m_wifi_status);
-   if (lookup != statusToState.end())
-   {
-      response["state"] = static_cast<int>(lookup->second);
-   }
-   else
-   {
-      LOGWARN("unknown state: %d", m_wifi_status);
-      returnResponse(false);
-   }
+   response["state"] = static_cast<int>(m_wifi_state.load());
    returnResponse(true);
 }
 
@@ -144,19 +136,26 @@ void WifiManagerState::statusChanged(const std::string &interface, InterfaceStat
 
 void WifiManagerState::updateWifiStatus(WifiManagerImpl::InterfaceStatus status)
 {
-   {
-      std::lock_guard<std::mutex> lock(m_mutex);
-      m_wifi_status = status;
-   }
-   auto lookup = statusToState.find(m_wifi_status);
+   bool state_changed = false;
+   auto lookup = statusToState.find(status);
+
    if (lookup != statusToState.end())
    {
-      // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
-      WifiManager::getInstance().onWIFIStateChanged(lookup->second, false);
+      if (lookup->second != m_wifi_state)
+      {
+         m_wifi_state = lookup->second;
+         state_changed = true;
+      }
    }
    else
    {
-      LOGWARN("unknown state: %d", m_wifi_status);
+      LOGWARN("unknown status: %d", status);
+   }
+
+   if (state_changed)
+   {
+      // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
+      WifiManager::getInstance().onWIFIStateChanged(m_wifi_state, false);
    }
 }
 

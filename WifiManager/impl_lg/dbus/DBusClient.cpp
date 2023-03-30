@@ -53,7 +53,7 @@ namespace WifiManagerImpl
 
     void DBusClient::handleStatusChangedDbusEvent(const std::string &aId, const std::string &aIfaceStatus)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::mutex> lock(m_event_mutex);
         if (m_statusChangedHandler)
         {
             auto status = statusFromString.find(aIfaceStatus);
@@ -70,15 +70,14 @@ namespace WifiManagerImpl
 
     void DBusClient::run()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (!m_initialized)
+        if (!m_dbus_data)
         {
             m_loopThread = std::thread(&DBusClient::dbusWorker, this);
-            m_initialized = m_initialized_future.get_future().get();
+            m_dbus_data = m_dbus_data_future.get_future().get();
 
-            if (m_initialized && m_networkconfig1_interface && m_wifimanagement1_interface)
+            if (m_dbus_data)
             {
-                m_handle_networkconfig_gsignal = g_signal_connect(m_networkconfig1_interface->proxy, "g-signal", G_CALLBACK(handle_dbus_event), this);
+                m_handle_networkconfig_gsignal = g_signal_connect(m_dbus_data->m_networkconfig1_interface->proxy, "g-signal", G_CALLBACK(handle_dbus_event), this);
                 if (!m_handle_networkconfig_gsignal)
                 {
                     LOGERR("Cannot connect to networkconfig1 g-signal");
@@ -94,7 +93,8 @@ namespace WifiManagerImpl
             }
             else
             {
-                // TODO: throw?
+                m_loopThread.join();
+                throw std::runtime_error("failure creating dbus interfaces");
             }
         }
     }
@@ -111,27 +111,25 @@ namespace WifiManagerImpl
 
     void DBusClient::stop()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_initialized)
+        if (m_dbus_data)
         {
             if (m_handle_networkconfig_gsignal != 0)
             {
-                g_signal_handler_disconnect(m_networkconfig1_interface->proxy, m_handle_networkconfig_gsignal);
+                g_signal_handler_disconnect(m_dbus_data->m_networkconfig1_interface->proxy, m_handle_networkconfig_gsignal);
             }
 
-            release_dbus_interface(m_networkconfig1_interface);
-            release_dbus_interface(m_wifimanagement1_interface);
-
-            m_networkconfig1_interface = nullptr;
-            m_wifimanagement1_interface = nullptr;
+            if (m_dbus_data->m_networkconfig1_interface)
+                release_dbus_interface(m_dbus_data->m_networkconfig1_interface);
+            if (m_dbus_data->m_wifimanagement1_interface)
+                release_dbus_interface(m_dbus_data->m_wifimanagement1_interface);
 
             g_main_context_invoke(
-                m_mainContext, +[](gpointer ptr) -> gboolean
+                m_dbus_data->m_mainContext, +[](gpointer ptr) -> gboolean
                 {
                 LOGINFO("LgiNetworkClient::Stop() quit main loop TID: %u", gettid());
                 g_main_loop_quit((GMainLoop*)ptr);
                 return FALSE; },
-                (gpointer)m_mainLoop);
+                (gpointer)m_dbus_data->m_mainLoop);
 
             if (m_loopThread.joinable())
             {
@@ -143,7 +141,8 @@ namespace WifiManagerImpl
             }
             LOGINFO("signals disconnected");
 
-            m_initialized = false;
+            delete m_dbus_data;
+            m_dbus_data = nullptr;
         }
     }
 
@@ -156,7 +155,7 @@ namespace WifiManagerImpl
         gchar **ids{nullptr};
 
         if (com_lgi_rdk_utils_networkconfig1_call_get_interfaces_sync(
-                m_networkconfig1_interface,
+                m_dbus_data->m_networkconfig1_interface,
                 &count,
                 &ids,
                 nullptr,
@@ -194,7 +193,7 @@ namespace WifiManagerImpl
         bool ret = false;
         if (
             com_lgi_rdk_utils_networkconfig1_call_get_param_sync(
-                m_networkconfig1_interface,
+                m_dbus_data->m_networkconfig1_interface,
                 interface.c_str(),
                 paramName.c_str(),
                 &status,
@@ -231,7 +230,7 @@ namespace WifiManagerImpl
         bool ret = false;
         if (
             com_lgi_rdk_utils_networkconfig1_call_get_status_sync(
-                m_networkconfig1_interface,
+                m_dbus_data->m_networkconfig1_interface,
                 interface.c_str(),
                 &status,
                 &ifaceStatus,
@@ -276,7 +275,7 @@ namespace WifiManagerImpl
         GError *error{nullptr};
 
         if (com_lgi_rdk_utils_wifimanagement1_call_get_ssidparams_sync(
-                m_wifimanagement1_interface,
+                m_dbus_data->m_wifimanagement1_interface,
                 ssid.c_str(),  // const gchar *arg_id,
                 netid.c_str(), // const gchar *arg_netid,
                 &status,
@@ -321,52 +320,61 @@ namespace WifiManagerImpl
     {
         LOGINFO("LgiNetworkClient::Worker() TID: %u", gettid());
 
-        m_mainContext = g_main_context_new();
-        m_mainLoop = g_main_loop_new(m_mainContext, false);
+        DbusData *dbusData = new DbusData();
+        dbusData->m_mainContext = g_main_context_new();
+        dbusData->m_mainLoop = g_main_loop_new(dbusData->m_mainContext, false);
 
-        if (m_mainLoop && m_mainContext)
+        bool initialization_complete = false;
+        GError *error = nullptr;
+
+        if (dbusData->m_mainLoop && dbusData->m_mainContext)
         {
-            g_main_context_push_thread_default(m_mainContext);
-            GError *error = nullptr;
-            m_networkconfig1_interface = networkconfig1_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
-                                                                               G_DBUS_PROXY_FLAGS_NONE,
-                                                                               NETWORK_CONFIG_DBUS_INTERFACE_NAME,
-                                                                               NETWORK_CONFIG_DBUS_INTERFACE_OBJECT_PATH,
-                                                                               NULL, /* GCancellable */
-                                                                               &error);
+            g_main_context_push_thread_default(dbusData->m_mainContext);
+            dbusData->m_networkconfig1_interface = networkconfig1_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+                                                                                         G_DBUS_PROXY_FLAGS_NONE,
+                                                                                         NETWORK_CONFIG_DBUS_INTERFACE_NAME,
+                                                                                         NETWORK_CONFIG_DBUS_INTERFACE_OBJECT_PATH,
+                                                                                         NULL, /* GCancellable */
+                                                                                         &error);
             if (error)
             {
                 LOGERR("Failed to create networkconfig proxy: %s", error->message);
-                g_error_free(error);
             }
-
-            m_wifimanagement1_interface = com_lgi_rdk_utils_wifimanagement1_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
-                                                                                                   G_DBUS_PROXY_FLAGS_NONE,
-                                                                                                   WIFI_MANAGEMENT_DBUS_INTERFACE_NAME,
-                                                                                                   WIFI_MANAGEMENT_DBUS_INTERFACE_OBJECT_PATH,
-                                                                                                   NULL, /* GCancellable */
-                                                                                                   &error);
-            if (error)
+            else
             {
-                LOGERR("Failed to create networkconfig proxy: %s", error->message);
-                g_error_free(error);
+
+                dbusData->m_wifimanagement1_interface = com_lgi_rdk_utils_wifimanagement1_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+                                                                                                                 G_DBUS_PROXY_FLAGS_NONE,
+                                                                                                                 WIFI_MANAGEMENT_DBUS_INTERFACE_NAME,
+                                                                                                                 WIFI_MANAGEMENT_DBUS_INTERFACE_OBJECT_PATH,
+                                                                                                                 NULL, /* GCancellable */
+                                                                                                                 &error);
+                if (error)
+                {
+                    LOGERR("Failed to create networkconfig proxy: %s", error->message);
+                }
+                else
+                {
+                    m_dbus_data_future.set_value(dbusData);
+                    initialization_complete = true;
+                    LOGINFO("DBusClient::dbusWorker() start main loop TID: %u", gettid());
+                    g_main_loop_run(dbusData->m_mainLoop); // blocks
+                    LOGINFO("DBusClient::dbusWorker() main loop finished TID: %u", gettid());
+                    g_main_context_pop_thread_default(dbusData->m_mainContext);
+                }
             }
-
-            m_initialized_future.set_value(m_networkconfig1_interface != nullptr && m_wifimanagement1_interface != nullptr);
-
-            LOGINFO("DBusClient::dbusWorker() start main loop TID: %u", gettid());
-            g_main_loop_run(m_mainLoop); // blocks
-            LOGINFO("DBusClient::dbusWorker() main loop finished TID: %u", gettid());
-            g_main_context_pop_thread_default(m_mainContext);
-            g_main_loop_unref(m_mainLoop);
-            g_main_context_unref(m_mainContext);
-            m_mainLoop = nullptr;
-            m_mainContext = nullptr;
         }
         else
         {
             LOGERR("Failed to create glib main loop");
-            m_initialized_future.set_value(false);
+            m_dbus_data_future.set_value(nullptr);
+        }
+
+        if (error) g_error_free(error);
+        if (dbusData->m_mainLoop) g_main_loop_unref(dbusData->m_mainLoop);
+        if (dbusData->m_mainContext) g_main_context_unref(dbusData->m_mainContext);
+        if (!initialization_complete) {
+            m_dbus_data_future.set_value(nullptr);
         }
     }
 }

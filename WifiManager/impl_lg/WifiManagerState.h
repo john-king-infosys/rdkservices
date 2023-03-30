@@ -20,6 +20,7 @@
 #pragma once
 
 #include <future>
+#include <atomic>
 
 #include "dbus/DBusClient.h"
 
@@ -50,9 +51,7 @@ namespace WPEFramework {
             void statusChanged(const std::string& interface, InterfaceStatus status);
             void updateWifiStatus(InterfaceStatus status);
 
-            // static std::string wifiInterfaceName;
-            std::mutex m_mutex;
-            InterfaceStatus m_wifi_status {Disabled};
+            std::atomic<WifiState> m_wifi_state {WifiState::DISABLED};
 
             static const std::string fetchWifiInterfaceName();
         };
