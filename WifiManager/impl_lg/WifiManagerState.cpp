@@ -87,11 +87,22 @@ uint32_t WifiManagerState::getCurrentState(const JsonObject &parameters, JsonObj
    returnResponse(true);
 }
 
-uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonObject &response) const
+static bool extractSsid(const std::string &netid, std::string &out_ssid)
 {
-   // this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest is not important
-   LOGINFOMETHOD();
+   size_t pos = netid.find(":");
+   if (pos != std::string::npos)
+   {
+      out_ssid = netid.substr(pos + 1);
+      return true;
+   }
+   else
+   {
+      return false;
+   }
+}
 
+bool WifiManagerState::fetchSsid(std::string &out_ssid)
+{
    const std::string &wifiInterface = getWifiInterfaceName();
    bool ret = false;
    if (!wifiInterface.empty())
@@ -99,31 +110,47 @@ uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonOb
       std::string netid;
       if (DBusClient::getInstance().networkconfig1_GetParam(wifiInterface, "netid", netid))
       {
-         size_t pos = netid.find(":");
-         if (pos != std::string::npos)
+         std::string ssid;
+         if (extractSsid(netid, ssid))
          {
-            response["ssid"] = netid.substr(pos + 1);
+            out_ssid = ssid;
+            if (ssid != m_latest_ssid)
+            {
+               WifiManager::getInstance().onSSIDsChanged();
+               m_latest_ssid = ssid;
+            }
             ret = true;
          }
          else
          {
-            LOGWARN("failed to parse ssid from netid");
+            LOGWARN("failed to parse ssid from netid: %s", netid.c_str());
          }
       }
-      else
-      {
-         LOGWARN("failed to retrieve wifi netid param");
-      }
    }
+   return ret;
+}
 
-   // only 'ssid' is used by Amazon app and needs to be returned; the rest can be empty for now
-   response["bssid"] = string("");
-   response["rate"] = string("");
-   response["noise"] = string("");
-   response["security"] = string("");
-   response["signalStrength"] = string("");
-   response["frequency"] = string("");
-   returnResponse(ret);
+uint32_t WifiManagerState::getConnectedSSID(const JsonObject &parameters, JsonObject &response)
+{
+   // this is used by Amazon, but only 'ssid' is used by Amazon app and needs to be returned; the rest is not important
+   LOGINFOMETHOD();
+   std::string ssid;
+   if (fetchSsid(ssid))
+   {
+      // only 'ssid' is used by Amazon app and needs to be returned; the rest can be empty for now
+      response["ssid"] = ssid;
+      response["bssid"] = string("");
+      response["rate"] = string("");
+      response["noise"] = string("");
+      response["security"] = string("");
+      response["signalStrength"] = string("");
+      response["frequency"] = string("");
+      returnResponse(true);
+   }
+   else
+   {
+      returnResponse(false);
+   }
 }
 
 void WifiManagerState::statusChanged(const std::string &interface, InterfaceStatus status)
@@ -154,6 +181,12 @@ void WifiManagerState::updateWifiStatus(WifiManagerImpl::InterfaceStatus status)
 
    if (state_changed)
    {
+      if (m_wifi_state == WifiState::CONNECTED)
+      {
+         static std::string _;
+         // fetchSsid will raise onSSIDsChanged event in case ssid was changed
+         fetchSsid(_);
+      }
       // Hardcode 'isLNF' for the moment (at the moment, the same is done in default rdk implementation)
       WifiManager::getInstance().onWIFIStateChanged(m_wifi_state, false);
    }

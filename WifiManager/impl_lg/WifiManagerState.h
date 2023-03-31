@@ -41,7 +41,7 @@ namespace WPEFramework {
             void Initialize();
 
             uint32_t getCurrentState(const JsonObject& parameters, JsonObject& response);
-            uint32_t getConnectedSSID(const JsonObject& parameters, JsonObject& response) const;
+            uint32_t getConnectedSSID(const JsonObject& parameters, JsonObject& response) /* dropping const, since this can update m_latest_ssid */;
             uint32_t setEnabled(const JsonObject& parameters, JsonObject& response);
             uint32_t getSupportedSecurityModes(const JsonObject& parameters, JsonObject& response);
             void setWifiStateCache(bool value,WifiState state) {/* not used */}
@@ -50,10 +50,13 @@ namespace WPEFramework {
         private:
             void statusChanged(const std::string& interface, InterfaceStatus status);
             void updateWifiStatus(InterfaceStatus status);
+            bool fetchSsid(std::string& out_ssid);
 
             std::atomic<WifiState> m_wifi_state {WifiState::DISABLED};
 
             static const std::string fetchWifiInterfaceName();
+
+            std::string m_latest_ssid;
         };
     }
 }
