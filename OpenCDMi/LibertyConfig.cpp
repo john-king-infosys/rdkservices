@@ -44,10 +44,10 @@ ASConfig::ASConfig() {
     rdk_logger_init("/etc/debug.ini");
     const std::string asURI = "ws://127.0.0.1:10415";
     _ASConnector = std::make_shared<ASConnector>(asURI, *this);
-    _ASConnector->WatchAPIServices("ready", ASAPI::APIServices::ready);
-    _ASConnector->WatchAPIConfig("Company", "apps.youtube.brandName", "");
-    _ASConnector->WatchAPIConfig("Model", "cpe.modelName", "");
-    _ASConnector->WatchAPIConfig("BuildInfo", "cpe.firmwareVersion", "");
+    _ASConnector->WatchAPIServices("configured", ASAPI::APIServices::configured, false);
+    _ASConnector->WatchAPIConfig("Company", "apps.youtube.brandName", "", false);
+    _ASConnector->WatchAPIConfig("Model", "cpe.modelName", "", false);
+    _ASConnector->WatchAPIConfig("BuildInfo", "cpe.firmwareVersion", "", false);
     _ASConnector->Connect();
 }
 
@@ -112,9 +112,9 @@ std::string ASConfig::getBuildInfo()
 void ASConfig::OnWatchData(ASConnector::DataSource src, const std::string& alias, json_t* data)
 {
     TRACE(WPEFramework::Trace::Information, (_T("ASConfig: received '%s' from lgias; data: '%s'"), alias.c_str(), json_is_string(data) ? json_string_value(data) : "<not-a-string>"));
-    if(alias == "ready") {
+    if(alias == "configured") {
         std::lock_guard<std::mutex> lck(_ConfigMtx);
-        TRACE(WPEFramework::Trace::Information, (_T("ASConfig: received 'ready' from lgias")));
+        TRACE(WPEFramework::Trace::Information, (_T("ASConfig: received 'configured' from lgias")));
         _AsReady = true;
     } else if(alias == "Company") {
         if (!json_is_string(data)) {
