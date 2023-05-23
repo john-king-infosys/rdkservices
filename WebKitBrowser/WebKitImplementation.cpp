@@ -18,6 +18,7 @@
  */
 
 #include <memory>
+#include <fstream>
 #include <utility>
 #include <tuple>
 #include <unistd.h>
@@ -366,7 +367,8 @@ static GSourceFuncs _handlerIntervention =
                                  #if defined(ENABLE_CLOUD_COOKIE_JAR)
                                  public Exchange::IBrowserCookieJar,
                                  #endif
-                                 public PluginHost::IStateControl {
+                                 public PluginHost::IStateControl,
+                                 public Exchange::IBrowserResources {
     public:
         class BundleConfig : public Core::JSON::Container {
         private:
@@ -816,6 +818,8 @@ static GSourceFuncs _handlerIntervention =
             , _unresponsiveReplyNum(0)
             , _frameCount(0)
             , _lastDumpTime(g_get_monotonic_time())
+            , _userScript()
+            , _userStyleSheet()
         {
             // Register an @Exit, in case we are killed, with an incorrect ref count !!
             if (atexit(CloseDown) != 0) {
@@ -1177,6 +1181,95 @@ static GSourceFuncs _handlerIntervention =
             return Core::ERROR_NONE;
         }
 
+        uint32_t Headers(string& header) const override
+        {
+            return Core::ERROR_NONE;
+        }
+
+        uint32_t Headers(const string& header) override
+        {
+            return Core::ERROR_NONE;
+        }
+
+        uint32_t UserScripts(string& uri) const override
+        {
+            _adminLock.Lock();
+            uri = _userScript;
+            _adminLock.Unlock();
+            return Core::ERROR_NONE;
+        }
+
+        uint32_t UserScripts(const string& uri) override
+        {
+            const auto content = GetFileContent(uri);
+            TRACE_L1("Setting user's style sheet (uri: %s, empty: %d)", uri.c_str(), content.empty());
+
+            _adminLock.Lock();
+            _userStyleSheet = uri;
+            _adminLock.Unlock();
+
+            RemoveAllUserScripts();
+            if (uri != "clear" && !content.empty()) {
+                AddUserScript(content, true);
+            }
+
+            return Core::ERROR_NONE;
+        }
+
+        uint32_t UserStyleSheets(string& uri) const override
+        {
+            _adminLock.Lock();
+            uri = _userStyleSheet;
+            _adminLock.Unlock();
+            return Core::ERROR_NONE;
+        }
+        uint32_t UserStyleSheets(const string& uri) override
+        {
+            const auto content = GetFileContent(uri);
+            TRACE_L1("Setting user's style sheet (uri: %s, empty: %d)", uri.c_str(), content.empty());
+
+            using SetUserStyleSheetsData = std::tuple<WebKitImplementation*, string, string>;
+            auto* data = new SetUserStyleSheetsData(this, uri, content);
+
+            g_main_context_invoke_full(
+                _context,
+                G_PRIORITY_DEFAULT,
+                [](gpointer customdata) -> gboolean {
+                    auto& data = *static_cast<SetUserStyleSheetsData*>(customdata);
+                    WebKitImplementation* object = std::get<0>(data);
+                    const auto& styleSheetUri = std::get<1>(data);
+                    const auto& styleSheetContent = std::get<2>(data);
+
+                    object->_adminLock.Lock();
+                    object->_userStyleSheet = styleSheetUri;
+                    object->_adminLock.Unlock();
+
+#ifdef WEBKIT_GLIB_API
+                    auto* userContentManager = webkit_web_view_get_user_content_manager(object->_view);
+                    webkit_user_content_manager_remove_all_style_sheets(userContentManager);
+                    if (styleSheetUri != "clear" && !styleSheetContent.empty()) {
+                        auto* stylesheet = webkit_user_style_sheet_new(
+                            styleSheetContent.c_str(),
+                            WEBKIT_USER_CONTENT_INJECT_TOP_FRAME,
+                            WEBKIT_USER_STYLE_LEVEL_USER,
+                            nullptr,
+                            nullptr
+                            );
+                        webkit_user_content_manager_add_style_sheet(userContentManager, stylesheet);
+                        webkit_user_style_sheet_unref(stylesheet);
+                    }
+#endif
+
+                    return G_SOURCE_REMOVE;
+                },
+                data,
+                [](gpointer customdata) {
+                    delete static_cast<SetUserStyleSheetsData*>(customdata);
+                });
+
+            return Core::ERROR_NONE;
+        }
+
 #ifdef RDK6_SUPPORT
         uint32_t RunJavaScript(const string& script) override
         {
@@ -1208,8 +1301,12 @@ static GSourceFuncs _handlerIntervention =
                 });
             return Core::ERROR_NONE;
         }
+#endif
 
-        uint32_t AddUserScript(const string& script, bool topFrameOnly) override
+        uint32_t AddUserScript(const string& script, bool topFrameOnly)
+#ifdef RDK6_SUPPORT
+            override
+#endif
         {
             if (_context == nullptr)
                 return Core::ERROR_GENERAL;
@@ -1233,7 +1330,10 @@ static GSourceFuncs _handlerIntervention =
             return Core::ERROR_NONE;
         }
 
-        uint32_t RemoveAllUserScripts() override
+        uint32_t RemoveAllUserScripts()
+#ifdef RDK6_SUPPORT
+            override
+#endif
         {
             if (_context == nullptr)
                 return Core::ERROR_GENERAL;
@@ -1255,7 +1355,6 @@ static GSourceFuncs _handlerIntervention =
                 nullptr);
             return Core::ERROR_NONE;
         }
-#endif
 
 #if defined(ENABLE_CLOUD_COOKIE_JAR)
         uint32_t CookieJar(uint32_t& version /* @out */, uint32_t& checksum /* @out */, string& payload /* @out */) const override
@@ -2409,6 +2508,7 @@ static GSourceFuncs _handlerIntervention =
         INTERFACE_ENTRY (Exchange::IBrowserCookieJar)
 #endif
         INTERFACE_ENTRY(PluginHost::IStateControl)
+        INTERFACE_ENTRY(Exchange::IBrowserResources)
         END_INTERFACE_MAP
 
     private:
@@ -2511,6 +2611,18 @@ static GSourceFuncs _handlerIntervention =
                     },
                     this);
             }
+        }
+        std::string GetFileContent(const std::string& fileName)
+        {
+            std::string content;
+            auto stream = std::ifstream(fileName);
+
+            if (stream.fail()) {
+                TRACE(Trace::Error, (_T("Failed to get content from file: %s"), fileName.c_str()));
+            } else {
+                content = std::string((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+            }
+            return content;
         }
 #ifdef WEBKIT_GLIB_API
         static void initializeWebExtensionsCallback(WebKitWebContext* context, WebKitImplementation* browser)
@@ -3374,6 +3486,8 @@ static GSourceFuncs _handlerIntervention =
         uint32_t _unresponsiveReplyNum;
         unsigned _frameCount;
         gint64 _lastDumpTime;
+        string _userScript;
+        string _userStyleSheet;
     };
 
     SERVICE_REGISTRATION(WebKitImplementation, 1, 0);
