@@ -132,5 +132,30 @@ namespace Plugin {
             ? Core::ERROR_NONE
             : GetRFCData(_T("Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.PartnerId"), distributorId);
     }
+
+    uint32_t DeviceInfoImplementation::PlatformName(string& value) const
+    {
+        value = "Scooby";
+        return Core::ERROR_NONE;
+    }
+
+    uint32_t DeviceInfoImplementation::ModelYear(uint16_t& value) const
+    {
+        value = 1984;
+        return Core::ERROR_NONE;
+    }
+    uint32_t DeviceInfoImplementation::FriendlyName(string& value) const
+    {
+        value = "Sauron";
+        return Core::ERROR_NONE;
+    }
+
+    uint32_t DeviceInfoImplementation::Configure(const PluginHost::IShell* service)
+    {
+        // return Exchange::IDeviceInfo::Configure(service);
+        printf("DeviceInfoImplementation::Configure\n"); fflush(stdout);
+        return Core::ERROR_NONE;
+    }
+
 }
 }
