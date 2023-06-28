@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Module.h"
-#include <interfaces/IDeviceInfo2.h>
+#include <interfaces/IDeviceInfo.h>
 
 namespace WPEFramework {
 namespace Plugin {

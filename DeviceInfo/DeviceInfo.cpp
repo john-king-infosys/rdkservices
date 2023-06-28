@@ -58,6 +58,7 @@ namespace Plugin {
         ASSERT(_subSystem != nullptr);
 
         _deviceInfo = service->Root<Exchange::IDeviceInfo>(_connectionId, 2000, _T("DeviceInfoImplementation"));
+
         _deviceAudioCapabilityInterface = service->Root<Exchange::IDeviceAudioCapabilities>(_connectionId, 2000, _T("DeviceAudioCapabilities"));
         _deviceVideoCapabilityInterface = service->Root<Exchange::IDeviceVideoCapabilities>(_connectionId, 2000, _T("DeviceVideoCapabilities"));
         _firmwareVersion = service->Root<Exchange::IFirmwareVersion>(_connectionId, 2000, _T("FirmwareVersion"));
