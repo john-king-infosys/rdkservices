@@ -34,7 +34,7 @@ add_library(${MODULE_NAME} SHARED
         Implementation/FirmwareVersion.cpp
         Implementation/DeviceInfo.cpp
         Implementation/DeviceAudioCapabilities.cpp
-#        Implementation/DeviceVideoCapabilities.cpp
+        Implementation/DeviceVideoCapabilities.cpp
         Module.cpp)
 
 set_target_properties(${MODULE_NAME} PROPERTIES
