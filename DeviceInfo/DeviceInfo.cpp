@@ -62,13 +62,14 @@ namespace Plugin {
         ASSERT(_subSystem != nullptr);
 
         _deviceInfo = service->Root<Exchange::IDeviceInfo>(_connectionId, 2000, _T("DeviceInfoImplementation"));
+
         _deviceAudioCapabilityInterface = service->Root<Exchange::IDeviceAudioCapabilities>(_connectionId, 2000, _T("DeviceAudioCapabilities"));
         _deviceVideoCapabilityInterface = service->Root<Exchange::IDeviceVideoCapabilities>(_connectionId, 2000, _T("DeviceVideoCapabilities"));
         _firmwareVersion = service->Root<Exchange::IFirmwareVersion>(_connectionId, 2000, _T("FirmwareVersion"));
 
         ASSERT(_deviceInfo != nullptr);
-        ASSERT(_deviceAudioCapabilities != nullptr);
-        ASSERT(_deviceVideoCapabilities != nullptr);
+        ASSERT(_deviceAudioCapabilityInterface != nullptr);
+        ASSERT(_deviceVideoCapabilityInterface != nullptr);
         ASSERT(_firmwareVersion != nullptr);
 
         // On success return empty, to indicate there is no error text.
@@ -161,7 +162,8 @@ namespace Plugin {
         Core::SystemInfo& singleton(Core::SystemInfo::Instance());
 
         systemInfo.Time = Core::Time::Now().ToRFC1123(true);
-        systemInfo.Version = _service->Version() + _T("#") + _subSystem->BuildTreeHash();
+        // TODO: IShell now have 'Versions' - 'a JSON Array of versions (JSONRPC interfaces) supported by this plugin'
+        systemInfo.Version = string("???") /* TODO _service->Version()*/ + _T("#") + _subSystem->BuildTreeHash();
         systemInfo.Uptime = singleton.GetUpTime();
         systemInfo.Freeram = singleton.GetFreeRam();
         systemInfo.Totalram = singleton.GetTotalRam();
