@@ -104,7 +104,8 @@ namespace Plugin {
             : GetMFRData(mfrSERIALIZED_TYPE_MANUFACTURER, make);
     }
 
-    uint32_t DeviceInfoImplementation::Model(string& model) const
+
+    uint32_t DeviceInfoImplementation::ModelName(string& model) const
     {
         return
         // TYPE_SKYMODELNAME exists for oem-sky-realtek
