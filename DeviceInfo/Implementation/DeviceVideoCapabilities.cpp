@@ -7,6 +7,8 @@
 
 #include "UtilsIarm.h"
 
+#include "util.h"
+
 namespace WPEFramework {
 namespace Plugin {
 
@@ -27,16 +29,14 @@ namespace Plugin {
     }
 
     uint32_t DeviceVideoCapabilities::VideoOutputs(IVideoOutputIterator*& videoOutputs /* @out */) const
-    // uint32_t DeviceVideoCapabilities::SupportedVideoDisplays(RPC::IStringIterator*& supportedVideoDisplays) const
     {
         uint32_t result = Core::ERROR_NONE;
 
-        std::list<string> list;
+        std::list<VideoOutput> list;
 
         try {
             const auto& vPorts = device::Host::getInstance().getVideoOutputPorts();
             for (size_t i = 0; i < vPorts.size(); i++) {
-
                 /**
                  * There's N:1 relation between VideoOutputPort and AudioOutputPort.
                  * When there are multiple Audio Ports on the Video Port,
@@ -48,11 +48,11 @@ namespace Plugin {
                  * needs to be filtered by name.
                  */
 
-                auto name = vPorts.at(i).getName();
-                if (std::find(list.begin(), list.end(), name) != list.end())
+                auto port = str_to_enum<VideoOutput>(vPorts.at(i).getName());
+                if (std::find(list.begin(), list.end(), port) != list.end())
                     continue;
 
-                list.emplace_back(name);
+                list.emplace_back(port);
             }
         } catch (const device::Exception& e) {
             TRACE(Trace::Fatal, (_T("Exception caught %s"), e.what()));
@@ -63,19 +63,16 @@ namespace Plugin {
         } catch (...) {
             result = Core::ERROR_GENERAL;
         }
-
         if (result == Core::ERROR_NONE) {
-            // TODO supportedVideoDisplays = (Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(list));
+            videoOutputs = (Core::Service<RPC::IteratorType<IVideoOutputIterator>>::Create<IVideoOutputIterator>(list));
         }
 
         return result;
     }
 
     uint32_t DeviceVideoCapabilities::HostEDID(string& edid /* @out */) const
-    // uint32_t DeviceVideoCapabilities::HostEDID(string& edid) const
     {
         uint32_t result = Core::ERROR_NONE;
-
         std::vector<uint8_t> edidVec({ 'u', 'n', 'k', 'n', 'o', 'w', 'n' });
         try {
             std::vector<unsigned char> edidVec2;
@@ -90,10 +87,8 @@ namespace Plugin {
         } catch (...) {
             result = Core::ERROR_GENERAL;
         }
-
         if (result == Core::ERROR_NONE) {
             // convert to base64
-
             if (edidVec.size() > (size_t)std::numeric_limits<uint16_t>::max()) {
                 result = Core::ERROR_GENERAL;
             } else {
@@ -102,19 +97,17 @@ namespace Plugin {
                 edid = base64String;
             }
         }
-
         return result;
     }
 
     uint32_t DeviceVideoCapabilities::DefaultResolution(const VideoOutput videoOutput /* @in */, ScreenResolution& defaultResolution /* @out */) const
-    // uint32_t DeviceVideoCapabilities::DefaultResolution(const string& videoDisplay, string& defaultResolution) const
     {
         uint32_t result = Core::ERROR_NONE;
-
         try {
-            auto strVideoPort = /* TODO videoDisplay.empty() ? */ device::Host::getInstance().getDefaultVideoPortName() /* TODO : videoDisplay*/;
+            std::string strVideoPort = enum_to_str(videoOutput);
+            if (strVideoPort.empty()) strVideoPort = device::Host::getInstance().getDefaultVideoPortName();
             auto& vPort = device::Host::getInstance().getVideoOutputPort(strVideoPort);
-            // TODO defaultResolution = vPort.getDefaultResolution().getName();
+            defaultResolution = str_to_enum<ScreenResolution>(vPort.getDefaultResolution().getName().c_str());
         } catch (const device::Exception& e) {
             TRACE(Trace::Fatal, (_T("Exception caught %s"), e.what()));
             result = Core::ERROR_GENERAL;
@@ -129,18 +122,18 @@ namespace Plugin {
     }
 
     uint32_t DeviceVideoCapabilities::Resolutions(const VideoOutput videoOutput /* @in */, IScreenResolutionIterator*& resolutions /* @out */) const
-    // uint32_t DeviceVideoCapabilities::SupportedResolutions(const string& videoDisplay, RPC::IStringIterator*& supportedResolutions) const
     {
         uint32_t result = Core::ERROR_NONE;
 
-        std::list<string> list;
+        std::list<ScreenResolution> list;
 
         try {
-            auto strVideoPort = /* TODO videoDisplay.empty() ? */ device::Host::getInstance().getDefaultVideoPortName() /* TODO : videoDisplay*/;
+            std::string strVideoPort = enum_to_str(videoOutput);
+            if (strVideoPort.empty()) strVideoPort = device::Host::getInstance().getDefaultVideoPortName();
             auto& vPort = device::Host::getInstance().getVideoOutputPort(strVideoPort);
             const auto resolutions = device::VideoOutputPortConfig::getInstance().getPortType(vPort.getType().getId()).getSupportedResolutions();
             for (size_t i = 0; i < resolutions.size(); i++) {
-                list.emplace_back(resolutions.at(i).getName());
+                list.emplace_back(str_to_enum<ScreenResolution>(resolutions.at(i).getName()));
             }
         } catch (const device::Exception& e) {
             TRACE(Trace::Fatal, (_T("Exception caught %s"), e.what()));
@@ -153,20 +146,21 @@ namespace Plugin {
         }
 
         if (result == Core::ERROR_NONE) {
-            // TODO supportedResolutions = (Core::Service<RPC::StringIterator>::Create<RPC::IStringIterator>(list));
+            resolutions = (Core::Service<RPC::IteratorType<IScreenResolutionIterator>>::Create<IScreenResolutionIterator>(list));
         }
 
         return result;
     }
 
     uint32_t DeviceVideoCapabilities::Hdcp(const VideoOutput videoOutput /* @in */, CopyProtection& hdcpVersion /* @out */) const
-    // uint32_t DeviceVideoCapabilities::SupportedHdcp(const string& videoDisplay, Exchange::IDeviceVideoCapabilities::CopyProtection& supportedHDCPVersion) const
     {
         uint32_t result = Core::ERROR_NONE;
 
         try {
-            auto strVideoPort = /* TODO videoDisplay.empty() ? */ device::Host::getInstance().getDefaultVideoPortName() /* TODO : videoDisplay*/;
-            auto& vPort = device::VideoOutputPortConfig::getInstance().getPort(strVideoPort);
+            std::string strVideoPort = enum_to_str(videoOutput);
+            if (strVideoPort.empty()) strVideoPort = device::Host::getInstance().getDefaultVideoPortName();
+            auto& vPort = device::Host::getInstance().getVideoOutputPort(strVideoPort);
+
             switch (vPort.getHDCPProtocol()) {
             case dsHDCP_VERSION_2X:
                 hdcpVersion = Exchange::IDeviceVideoCapabilities::CopyProtection::HDCP_22;
@@ -192,19 +186,19 @@ namespace Plugin {
 
     uint32_t DeviceVideoCapabilities::HDR(bool& supportsHDR /*@out*/) const
     {
-        uint32_t result = Core::ERROR_NONE;
+        uint32_t result = Core::ERROR_GENERAL;
         supportsHDR = false;
         return result;
     }
     uint32_t DeviceVideoCapabilities::Atmos(bool& supportsAtmos /*@out*/) const
     {
-        uint32_t result = Core::ERROR_NONE;
+        uint32_t result = Core::ERROR_GENERAL;
         supportsAtmos = false;
         return result;
     }
     uint32_t DeviceVideoCapabilities::CEC(bool& supportsCEC /*@out*/) const
     {
-        uint32_t result = Core::ERROR_NONE;
+        uint32_t result = Core::ERROR_GENERAL;
         supportsCEC = false;
         return result;
     }

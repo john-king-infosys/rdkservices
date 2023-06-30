@@ -6,7 +6,7 @@
 
 #include "UtilsIarm.h"
 
-#include <core/Enumerate.h>
+#include "util.h"
 
 namespace WPEFramework {
 namespace Plugin {
@@ -26,18 +26,6 @@ namespace Plugin {
         } catch (...) {
         }
     }
-
-
-    template<class enum_type>
-    enum_type str_to_enum(const char *cstr) {
-        return WPEFramework::Core::EnumerateType<enum_type>(cstr).Value();
-    }
-
-    template<class enum_type>
-    const char *enum_to_str(enum_type e) {
-        return WPEFramework::Core::EnumerateType<enum_type>(e).Data();
-    }
-
 
     uint32_t DeviceAudioCapabilities::AudioOutputs(IAudioOutputIterator*& audioOutputs /* @out */) const
     {
