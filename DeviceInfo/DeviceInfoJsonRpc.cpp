@@ -133,7 +133,6 @@ namespace Plugin {
                 }
             }
         }
-
         return result;
     }
 
