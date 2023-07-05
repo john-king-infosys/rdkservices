@@ -44,6 +44,11 @@
         }
     },
     "methods": {
+                },
+                "error":{
+                        "summary": "An error message in case of a failure",
+                        "type": "string",
+                        "example": "internal dobby error"
         "executeCommand":{
             "summary": "Executes a command inside a running container. The path to the executable must resolve within the container's namespace.",
             "params": {
@@ -54,6 +59,11 @@
                     },
                     "options": {
                         "summary": "Global options for crun `exec` command",
+        },
+        "error": {
+            "summary": "Error message",
+            "type": "string",
+            "example": "mount failed"
                         "type": "string",
                         "example": "--cwd=PATH"
                     },
@@ -417,6 +427,21 @@
                     },
                     "success":{
                         "$ref": "#/definitions/success"
+                    },
+                    "error":{
+                        "summary": "An error message in case of a failure",
+                        "type": "string",
+                        "example": "internal dobby error"
+                    },
+                    "error":{
+                        "summary": "An error message in case of a failure",
+                        "type": "string",
+                        "example": "could not remove symlink"
+                    },
+                    "error":{
+                        "summary": "An error message in case of a failure",
+                        "type": "string",
+                        "example": "internal dobby error"
                     }
                 },
                 "required": [
