@@ -943,10 +943,10 @@ static GSourceFuncs _handlerIntervention =
                     object->_adminLock.Unlock();
 
                     SYSLOG(Logging::Notification, (_T("Mixed content is %s\n"), (allowMixedContent ? "allowed" : "blocked")));
-                    WebKitSettings* settings = webkit_web_view_get_settings(object->_view);
-                    g_object_set(G_OBJECT(settings),
-                        "allow-running-of-insecure-content", allowMixedContent,
-                        "allow-display-of-insecure-content", allowMixedContent, nullptr);
+                    //WebKitSettings* settings = webkit_web_view_get_settings(object->_view);
+                    //g_object_set(G_OBJECT(settings),
+                    //    "allow-running-of-insecure-content", allowMixedContent,
+                    //    "allow-display-of-insecure-content", allowMixedContent, nullptr);
                     return G_SOURCE_REMOVE;
                 },
                 data,
@@ -3118,13 +3118,13 @@ static GSourceFuncs _handlerIntervention =
             SYSLOG(Logging::Notification, (_T("Mixed content is %s\n"), (_allowMixedContent ? "allowed" : "blocked")));
 #if WEBKIT_CHECK_VERSION(2, 38, 0)
             g_object_set(G_OBJECT(preferences),
-                     "disable-web-security", _allowMixedContent,
-                     "allow-running-of-insecure-content", _allowMixedContent,
-                     "allow-display-of-insecure-content", _allowMixedContent, nullptr);
+                     "disable-web-security", false,
+                     "allow-running-of-insecure-content", false,
+                     "allow-display-of-insecure-content", false, nullptr);
 #else
             g_object_set(G_OBJECT(preferences),
-                     "allow-running-of-insecure-content", _allowMixedContent,
-                     "allow-display-of-insecure-content", _allowMixedContent, nullptr);
+                     "allow-running-of-insecure-content", false,
+                     "allow-display-of-insecure-content", false, nullptr);
 #endif
             _view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW,
                 "backend", webkit_web_view_backend_new(wpe_view_backend_create(), nullptr, nullptr),
