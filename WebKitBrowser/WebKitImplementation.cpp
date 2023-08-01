@@ -526,6 +526,7 @@ static GSourceFuncs _handlerIntervention =
                 , UserAgent()
                 , URL(_T("http://www.google.com"))
                 , Whitelist()
+                , MixedContentWhitelist()
                 , PageGroup(_T("WPEPageGroup"))
                 , CookieStorage()
                 , CloudCookieJarEnabled(false)
@@ -541,6 +542,7 @@ static GSourceFuncs _handlerIntervention =
                 , Compositor()
                 , Inspector()
                 , InspectorNative()
+                , InspectorPort()
                 , FPS(false)
                 , Cursor(false)
                 , Touch(false)
@@ -557,6 +559,7 @@ static GSourceFuncs _handlerIntervention =
                 , CertificateCheck(true)
                 , ClientIdentifier()
                 , AllowWindowClose(false)
+                , AllowMoveToSuspendOnWindowClose(false)
                 , NonCompositedWebGLEnabled(false)
                 , EnvironmentOverride(false)
                 , Automation(false)
@@ -593,6 +596,7 @@ static GSourceFuncs _handlerIntervention =
                 Add(_T("useragent"), &UserAgent);
                 Add(_T("url"), &URL);
                 Add(_T("whitelist"), &Whitelist);
+                Add(_T("mixedcontentwhitelist"), &MixedContentWhitelist);
                 Add(_T("pagegroup"), &PageGroup);
                 Add(_T("cookiestorage"), &CookieStorage);
                 Add(_T("cloudcookiejarenabled"), &CloudCookieJarEnabled);
@@ -608,6 +612,7 @@ static GSourceFuncs _handlerIntervention =
                 Add(_T("compositor"), &Compositor);
                 Add(_T("inspector"), &Inspector);
                 Add(_T("inspectornative"), &InspectorNative);
+                Add(_T("inspectorport"), &InspectorPort);
                 Add(_T("fps"), &FPS);
                 Add(_T("cursor"), &Cursor);
                 Add(_T("touch"), &Touch);
@@ -625,6 +630,7 @@ static GSourceFuncs _handlerIntervention =
                 Add(_T("javascript"), &JavaScript);
                 Add(_T("clientidentifier"), &ClientIdentifier);
                 Add(_T("windowclose"), &AllowWindowClose);
+                Add(_T("allowmovetosuspendonwindowclose"), &AllowMoveToSuspendOnWindowClose);
                 Add(_T("noncompositedwebgl"), &NonCompositedWebGLEnabled);
                 Add(_T("environmentoverride"), &EnvironmentOverride);
                 Add(_T("automation"), &Automation);
@@ -667,6 +673,7 @@ static GSourceFuncs _handlerIntervention =
             Core::JSON::String UserAgent;
             Core::JSON::String URL;
             Core::JSON::String Whitelist;
+            Core::JSON::String MixedContentWhitelist;
             Core::JSON::String PageGroup;
             Core::JSON::String CookieStorage;
             Core::JSON::Boolean CloudCookieJarEnabled;
@@ -682,6 +689,7 @@ static GSourceFuncs _handlerIntervention =
             Core::JSON::String Compositor;
             Core::JSON::String Inspector;
             Core::JSON::Boolean InspectorNative;
+            Core::JSON::String InspectorPort;
             Core::JSON::Boolean FPS;
             Core::JSON::Boolean Cursor;
             Core::JSON::Boolean Touch;
@@ -699,6 +707,7 @@ static GSourceFuncs _handlerIntervention =
             JavaScriptSettings JavaScript;
             Core::JSON::String ClientIdentifier;
             Core::JSON::Boolean AllowWindowClose;
+            Core::JSON::Boolean AllowMoveToSuspendOnWindowClose;
             Core::JSON::Boolean NonCompositedWebGLEnabled;
             Core::JSON::Boolean EnvironmentOverride;
             Core::JSON::Boolean Automation;
@@ -867,7 +876,6 @@ static GSourceFuncs _handlerIntervention =
             , _lastDumpTime(g_get_monotonic_time())
             , _userScript()
             , _userStyleSheet()
-            , _allowMixedContent(true)
         {
             // Register an @Exit, in case we are killed, with an incorrect ref count !!
             if (atexit(CloseDown) != 0) {
@@ -902,50 +910,22 @@ static GSourceFuncs _handlerIntervention =
         }
 
     public:
-        uint32_t SecurityProfile(string& profile) const override { return Core::ERROR_UNAVAILABLE; }
-        uint32_t SecurityProfile(const string& profile) override { return Core::ERROR_UNAVAILABLE; }
+        uint32_t SecurityProfile(string& profile) const override
+        {
+            profile = "strict";
+            return Core::ERROR_NONE;
+        }
+        uint32_t SecurityProfile(const string& profile) override { return Core::ERROR_NONE; }
 
         uint32_t MixedContentPolicy(MixedContentPolicyType& policy) const override
         {
-            _adminLock.Lock();
-            policy = _allowMixedContent ? MixedContentPolicyType::ALLOWED : MixedContentPolicyType::BLOCKED;
-            _adminLock.Unlock();
+            policy = MixedContentPolicyType::BLOCKED;
             return Core::ERROR_NONE;
         }
 
         uint32_t MixedContentPolicy(const MixedContentPolicyType policy) override
         {
-            if (_context == nullptr) {
-                return Core::ERROR_GENERAL;
-            }
-
-            const auto allowMixedContent = (policy == MixedContentPolicyType::ALLOWED);
-
-            using SetMixedContentPolicyData = std::tuple<WebKitImplementation*, bool>;
-            auto* data = new SetMixedContentPolicyData(this, allowMixedContent);
-            g_main_context_invoke_full(
-                _context,
-                G_PRIORITY_DEFAULT,
-                [](gpointer customdata) -> gboolean {
-                    auto& data = *static_cast<SetMixedContentPolicyData*>(customdata);
-                    WebKitImplementation* object = std::get<0>(data);
-                    const bool allowMixedContent = std::get<1>(data);
-
-                    object->_adminLock.Lock();
-                    object->_allowMixedContent = allowMixedContent;
-                    object->_adminLock.Unlock();
-
-                    SYSLOG(Logging::Notification, (_T("Mixed content is %s\n"), (allowMixedContent ? "allowed" : "blocked")));
-                    WebKitSettings* settings = webkit_web_view_get_settings(object->_view);
-                    g_object_set(G_OBJECT(settings),
-                        "allow-running-of-insecure-content", allowMixedContent,
-                        "allow-display-of-insecure-content", allowMixedContent, nullptr);
-                    return G_SOURCE_REMOVE;
-                },
-                data,
-                [](gpointer customdata) {
-                    delete static_cast<SetMixedContentPolicyData*>(customdata);
-                });
+            SYSLOG_GLOBAL(Logging::Notification, (_T("Mixed content policy has NOT been changed\n")));
             return Core::ERROR_NONE;
         }
 
@@ -2535,6 +2515,9 @@ static GSourceFuncs _handlerIntervention =
                 } else {
                     Core::SystemInfo::SetEnvironment(_T("WEBKIT_INSPECTOR_HTTP_SERVER"), _config.Inspector.Value(), !environmentOverride);
                 }
+                if (_config.InspectorPort.Value().empty() == false) {
+                    Core::SystemInfo::SetEnvironment(_T("WEBKIT_INSPECTOR_PORT"), _config.InspectorPort.Value(), !environmentOverride);
+                }
 #else
                 if (_config.Automation.Value()) {
                     Core::SystemInfo::SetEnvironment(_T("WEBKIT_INSPECTOR_SERVER"), _config.Inspector.Value(), !environmentOverride);
@@ -2862,7 +2845,11 @@ static GSourceFuncs _handlerIntervention =
         {
             webkit_web_context_set_web_extensions_directory(context, browser->_extensionPath.c_str());
             // FIX it
-            GVariant* data = g_variant_new("(smsb)", std::to_string(browser->_guid).c_str(), !browser->_config.Whitelist.Value().empty() ? browser->_config.Whitelist.Value().c_str() : nullptr, browser->_config.LogToSystemConsoleEnabled.Value());
+            GVariant* data = g_variant_new("(smsbms)",
+                                           std::to_string(browser->_guid).c_str(), //s
+                                           !browser->_config.Whitelist.Value().empty() ? browser->_config.Whitelist.Value().c_str() : nullptr, //ms
+                                           browser->_config.LogToSystemConsoleEnabled.Value(), //b
+                                           !browser->_config.MixedContentWhitelist.Value().empty() ? browser->_config.MixedContentWhitelist.Value().c_str() : nullptr); //ms
             webkit_web_context_set_web_extensions_initialization_user_data(context, data);
         }
         static void wpeNotifyWPEFrameworkMessageReceivedCallback(WebKitUserContentManager*, WebKitJavascriptResult* message, WebKitImplementation* browser)
@@ -2917,7 +2904,7 @@ static GSourceFuncs _handlerIntervention =
         static void loadFailedCallback(WebKitWebView*, WebKitLoadEvent loadEvent, const gchar* failingURI, GError* error, WebKitImplementation* browser)
         {
             string message(string("{ \"url\": \"") + failingURI + string("\", \"Error message\": \"") + error->message + string("\", \"loadEvent\":") + Core::NumberType<uint32_t>(loadEvent).Text() + string(" }"));
-            SYSLOG(Trace::Information, (_T("LoadFailed: %s"), message.c_str()));
+            SYSLOG_GLOBAL(Logging::Notification, (_T("LoadFailed: %s"), message.c_str()));
             if (g_error_matches(error, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)) {
                 browser->_ignoreLoadFinishedOnce = true;
                 return;
@@ -2928,13 +2915,13 @@ static GSourceFuncs _handlerIntervention =
         {
             switch (reason) {
             case WEBKIT_WEB_PROCESS_CRASHED:
-                SYSLOG(Trace::Fatal, (_T("CRASH: WebProcess crashed: exiting ...")));
+                SYSLOG_GLOBAL(Logging::Fatal, (_T("CRASH: WebProcess crashed: exiting ...")));
                 break;
             case WEBKIT_WEB_PROCESS_EXCEEDED_MEMORY_LIMIT:
-                SYSLOG(Trace::Fatal, (_T("CRASH: WebProcess terminated due to memory limit: exiting ...")));
+                SYSLOG_GLOBAL(Logging::Fatal, (_T("CRASH: WebProcess terminated due to memory limit: exiting ...")));
                 break;
             case WEBKIT_WEB_PROCESS_TERMINATED_BY_API:
-                SYSLOG(Trace::Fatal, (_T("CRASH: WebProcess terminated by API")));
+                SYSLOG_GLOBAL(Logging::Fatal, (_T("CRASH: WebProcess terminated by API")));
                 break;
             }
             g_signal_handlers_block_matched(webView, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, browser);
@@ -2942,7 +2929,7 @@ static GSourceFuncs _handlerIntervention =
             {
                 virtual void Dispatch() { exit(1); }
             };
-            Core::IWorkerPool::Instance().Submit(Core::proxy_cast<Core::IDispatch>(Core::ProxyType<ExitJob>::Create()));
+            Core::IWorkerPool::Instance().Submit(Core::ProxyType<Core::IDispatch>(Core::ProxyType<ExitJob>::Create()));
         }
         static void closeCallback(VARIABLE_IS_NOT_USED WebKitWebView* webView, WebKitImplementation* browser)
         {
@@ -3161,6 +3148,9 @@ static GSourceFuncs _handlerIntervention =
               webkit_settings_set_enable_tabs_to_links(preferences, _config.SpatialNavigation.Value());
             }
             webkit_settings_set_allow_scripts_to_close_windows(preferences, _config.AllowWindowClose.Value());
+#if WEBKIT_CHECK_VERSION(2, 38, 0)
+            webkit_settings_set_allow_move_to_suspend_on_window_close(preferences, _config.AllowMoveToSuspendOnWindowClose.Value());
+#endif
             webkit_settings_set_enable_non_composited_webgl(preferences, _config.NonCompositedWebGLEnabled.Value());
 
             // Media Content Types Requiring Hardware Support
@@ -3184,17 +3174,17 @@ static GSourceFuncs _handlerIntervention =
             webkit_settings_set_enable_webaudio(preferences, _config.WebAudioEnabled.Value());
 
             // Allow mixed content.
-            _allowMixedContent = !_config.Secure.Value();
-            SYSLOG(Logging::Notification, (_T("Mixed content is %s\n"), (_allowMixedContent ? "allowed" : "blocked")));
+            bool allowMixedContent = !_config.Secure.Value();
+            SYSLOG(Logging::Notification, (_T("Mixed content is %s\n"), (allowMixedContent ? "allowed" : "blocked")));
 #if WEBKIT_CHECK_VERSION(2, 38, 0)
             g_object_set(G_OBJECT(preferences),
-                     "disable-web-security", _allowMixedContent,
-                     "allow-running-of-insecure-content", _allowMixedContent,
-                     "allow-display-of-insecure-content", _allowMixedContent, nullptr);
+                     "disable-web-security", allowMixedContent,
+                     "allow-running-of-insecure-content", allowMixedContent,
+                     "allow-display-of-insecure-content", allowMixedContent, nullptr);
 #else
             g_object_set(G_OBJECT(preferences),
-                     "allow-running-of-insecure-content", _allowMixedContent,
-                     "allow-display-of-insecure-content", _allowMixedContent, nullptr);
+                     "allow-running-of-insecure-content", allowMixedContent,
+                     "allow-display-of-insecure-content", allowMixedContent, nullptr);
 #endif
             _view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW,
                 "backend", webkit_web_view_backend_new(wpe_view_backend_create(), nullptr, nullptr),
@@ -3556,7 +3546,7 @@ static GSourceFuncs _handlerIntervention =
                     gchar* scriptContent;
                     auto success = g_file_get_contents(path.c_str(), &scriptContent, nullptr, nullptr);
                     if (!success) {
-                        SYSLOG(Trace::Error, (_T("Unable to read user script '%s'"), path.c_str()));
+                        SYSLOG(Logging::Error, (_T("Unable to read user script '%s'"), path.c_str()));
                         return;
                     }
                     AddUserScriptImpl(scriptContent, false);
@@ -3679,7 +3669,7 @@ static GSourceFuncs _handlerIntervention =
                     _unresponsiveReplyNum = kWebProcessUnresponsiveReplyDefaultLimit;
                     Logging::DumpSystemFiles(webprocessPID);
                     if (syscall(__NR_tgkill, webprocessPID, webprocessPID, SIGFPE) == -1) {
-                        SYSLOG(Trace::Error, (_T("tgkill failed, signal=%d process=%u errno=%d (%s)"), SIGFPE, webprocessPID, errno, strerror(errno)));
+                        SYSLOG(Logging::Error, (_T("tgkill failed, signal=%d process=%u errno=%d (%s)"), SIGFPE, webprocessPID, errno, strerror(errno)));
                     }
                 } else {
                     DeactivateBrowser(PluginHost::IShell::FAILURE);
@@ -3691,7 +3681,7 @@ static GSourceFuncs _handlerIntervention =
                 Logging::DumpSystemFiles(webprocessPID);
 
                 if (syscall(__NR_tgkill, webprocessPID, webprocessPID, SIGFPE) == -1) {
-                    SYSLOG(Trace::Error, (_T("tgkill failed, signal=%d process=%u errno=%d (%s)"), SIGFPE, webprocessPID, errno, strerror(errno)));
+                    SYSLOG(Logging::Error, (_T("tgkill failed, signal=%d process=%u errno=%d (%s)"), SIGFPE, webprocessPID, errno, strerror(errno)));
                 }
             } else if (_unresponsiveReplyNum == (2 * kWebProcessUnresponsiveReplyDefaultLimit)) {
                 DeactivateBrowser(PluginHost::IShell::WATCHDOG_EXPIRED);
@@ -3706,7 +3696,7 @@ static GSourceFuncs _handlerIntervention =
                 if (self->_unresponsiveReplyNum > 0) {
 
                     std::string activeURL(webkit_web_view_get_uri(self->_view));
-                    SYSLOG(Logging::Notification, (_T("WebProcess recovered after %d unresponsive replies, url=%s\n"),
+                    SYSLOG_GLOBAL(Logging::Notification, (_T("WebProcess recovered after %d unresponsive replies, url=%s\n"),
                                                 self->_unresponsiveReplyNum, activeURL.c_str()));
                     self->_unresponsiveReplyNum = 0;
                 }
@@ -3720,7 +3710,7 @@ static GSourceFuncs _handlerIntervention =
 
                 std::string activeURL = GetPageActiveURL(page);
                 pid_t webprocessPID = WKPageGetProcessIdentifier(page);
-                SYSLOG(Logging::Notification, (_T("WebProcess recovered after %d unresponsive replies, pid=%u, url=%s\n"),
+                SYSLOG_GLOBAL(Logging::Notification, (_T("WebProcess recovered after %d unresponsive replies, pid=%u, url=%s\n"),
                                             self._unresponsiveReplyNum, webprocessPID, activeURL.c_str()));
                 self._unresponsiveReplyNum = 0;
             }
@@ -3790,7 +3780,6 @@ static GSourceFuncs _handlerIntervention =
         gint64 _lastDumpTime;
         string _userScript;
         string _userStyleSheet;
-        bool _allowMixedContent;
     };
 
     SERVICE_REGISTRATION(WebKitImplementation, 1, 0);
@@ -3969,7 +3958,7 @@ static GSourceFuncs _handlerIntervention =
 
     /* static */ void webProcessDidCrash(WKPageRef, const void*)
     {
-        SYSLOG(Trace::Fatal, (_T("CRASH: WebProcess crashed, exiting...")));
+        SYSLOG_GLOBAL(Trace::Fatal, (_T("CRASH: WebProcess crashed, exiting...")));
         exit(1);
     }
 
