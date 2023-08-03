@@ -48,6 +48,9 @@
 #include "BrowserConsoleLog.h"
 #include "Tags.h"
 
+#include <dbus/dbus.h>
+#include <gio/gio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,6 +95,51 @@ WK_EXPORT void WKPreferencesSetPageCacheEnabled(WKPreferencesRef preferences, bo
 
 namespace WPEFramework {
 namespace Plugin {
+
+    std::string getMainConfigValue(const std::string& key)
+    {
+        std::string result;
+
+        GDBusProxy* proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
+                                                            (GDBusProxyFlags) (G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS),
+                                                            nullptr,
+                                                            "com.lgi.rdk.as",
+                                                            "/com/lgi/rdk/as/Configuration1",
+                                                            "com.lgi.rdk.as.Configuration1",
+                                                            nullptr,
+                                                            nullptr);
+        if (proxy) {
+            GVariant* gv_result = g_dbus_proxy_call_sync(proxy,
+                                                            "GetConfig",
+                                                            g_variant_new("(s)", key.c_str()),
+                                                            G_DBUS_CALL_FLAGS_NONE,
+                                                            -1,
+                                                            nullptr,
+                                                            nullptr);
+            if (gv_result) {
+                if (g_variant_is_of_type(gv_result, G_VARIANT_TYPE_TUPLE) && 1 == g_variant_n_children(gv_result)) {
+                    gchar* gchar_result;
+                    g_variant_get(gv_result, "(s)", &gchar_result);
+                    result.assign(gchar_result);
+                    g_free(gchar_result);
+                    // strip enclosing ""
+                    if ('"' == result.front() && '"' == result.back()) {
+                        result.assign(result, 1, result.size() - 2);
+                    }
+                    SYSLOG_GLOBAL(Logging::Notification, (_T("Config value for %s : %s"), key.c_str(), result.c_str()));
+                } else {
+                    SYSLOG_GLOBAL(Logging::Error, (_T("Unexpected result type: %s"), g_variant_get_type_string(gv_result)));
+                }
+                g_variant_unref(gv_result);
+            } else {
+                SYSLOG_GLOBAL(Logging::Error, (_T("g_dbus_proxy_call_sync result is null!")));
+            }
+            g_object_unref(proxy);
+        } else {
+            SYSLOG_GLOBAL(Logging::Error, (_T("Failed to get DBus proxy!")));
+        }
+        return result;
+    }
 
 #ifndef WEBKIT_GLIB_API
     static void onDidReceiveSynchronousMessageFromInjectedBundle(WKContextRef context, WKStringRef messageName,
@@ -831,6 +879,8 @@ static GSourceFuncs _handlerIntervention =
     private:
         WebKitImplementation(const WebKitImplementation&) = delete;
         WebKitImplementation& operator=(const WebKitImplementation&) = delete;
+
+        std::string _bootUrl;
 
     public:
         WebKitImplementation()
@@ -2207,13 +2257,16 @@ static GSourceFuncs _handlerIntervention =
         {
             TRACE(Trace::Information, (_T("%s"), URL.c_str()));
 
+            bool isCurrentUrlBootUrl = urlValue() == _bootUrl;
+            bool isNewUrlBootUrl = URL == _bootUrl;
+            if(!isCurrentUrlBootUrl && isNewUrlBootUrl && !_bootUrl.empty()) {
+                TRACE(Trace::Information, (_T("New URL: %s"), URL.c_str()));
+            }
+
             urlValue(URL);
 
-            // TODO: read boot address using DBus!
-            const size_t bootUrl = URL.find("metrological") != string::npos;
-            const size_t blankUrl = URL.find("about:blank") != string::npos;
-            TRACE(Trace::Information, (_T("%s, boot = %d, blank = %d, waitForFailedOrFinished = %d"), URL.c_str(), bootUrl, blankUrl, urlData_.waitForFailedOrFinished));
-            if (bootUrl || blankUrl) {
+            const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
+            if (isNewUrlBootUrl || isNewUrlBlankUrl) {
                 if (!urlData_.waitForFailedOrFinished) {
                     TRACE(Trace::Information, (_T("Notify that URL has been loaded: %s"), URL.c_str()));
                     std::unique_lock<std::mutex> lock{urlData_.mutex};
@@ -2221,6 +2274,7 @@ static GSourceFuncs _handlerIntervention =
                     urlData_.cond.notify_one();
                 }
             } else {
+                TRACE(Trace::Information, (_T("Start waiting for URL load result: %s"), URL.c_str()));
                 std::unique_lock<std::mutex> lock{urlData_.mutex};
                 urlData_.waitForFailedOrFinished = true;
             }
@@ -2399,6 +2453,8 @@ static GSourceFuncs _handlerIntervention =
             _service = service;
 
             _dataPath = service->DataPath();
+
+            _bootUrl = getMainConfigValue("app.metroBootPath");
 
             string configLine = service->ConfigLine();
             Core::OptionalType<Core::JSON::Error> error;
