@@ -2264,11 +2264,10 @@ static GSourceFuncs _handlerIntervention =
 
             urlValue(URL);
 
-            // TODO: read boot address using DBus!
-            const size_t bootUrl = URL.find("metrological") != string::npos;
-            const size_t blankUrl = URL.find("about:blank") != string::npos;
-            TRACE(Trace::Information, (_T("%s, boot = %d, blank = %d, waitForFailedOrFinished = %d"), URL.c_str(), bootUrl, blankUrl, urlData_.waitForFailedOrFinished));
-            if (bootUrl || blankUrl) {
+            const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
+            static const auto metroDomain = _bootUrl.substr(_bootUrl.find('#'));
+            const bool isNewUrlMetroSubdomain = URL.find(metroDomain) != string::npos;
+            if (isNewUrlBootUrl || isNewUrlBlankUrl || isNewUrlMetroSubdomain) {
                 if (!urlData_.waitForFailedOrFinished) {
                     TRACE(Trace::Information, (_T("Notify that URL has been loaded: %s"), URL.c_str()));
                     std::unique_lock<std::mutex> lock{urlData_.mutex};
