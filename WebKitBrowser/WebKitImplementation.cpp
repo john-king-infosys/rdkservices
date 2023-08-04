@@ -2266,7 +2266,9 @@ static GSourceFuncs _handlerIntervention =
             urlValue(URL);
 
             const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
-            if (isNewUrlBootUrl || isNewUrlBlankUrl) {
+            static const auto metroDomain = _bootUrl.substr(_bootUrl.find('#'));
+            const bool isNewUrlMetroSubdomain = URL.find(metroDomain) != string::npos;
+            if (isNewUrlBootUrl || isNewUrlBlankUrl || isNewUrlMetroSubdomain) {
                 if (!urlData_.waitForFailedOrFinished) {
                     TRACE(Trace::Information, (_T("Notify that URL has been loaded: %s"), URL.c_str()));
                     std::unique_lock<std::mutex> lock{urlData_.mutex};
