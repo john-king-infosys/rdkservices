@@ -340,7 +340,7 @@ static void handle_dbus_event(GDBusProxy *proxy,
 {
     std::string signal_name{_signal_name};
 
-    const gsize num_params = g_variant_n_children(parameters);
+    const size_t num_params = g_variant_n_children(parameters);
     GVariantIter iter;
     g_variant_iter_init(&iter, parameters);
 
