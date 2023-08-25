@@ -33,7 +33,7 @@ namespace WifiManagerImpl
     {
         std::string signal_name{_signal_name};
 
-        const gsize num_params = g_variant_n_children(parameters);
+        const size_t num_params = g_variant_n_children(parameters);
         GVariantIter iter;
         g_variant_iter_init(&iter, parameters);
 
@@ -150,7 +150,6 @@ namespace WifiManagerImpl
 
     bool DBusClient::networkconfig1_GetInterfaces(std::vector<std::string> &out)
     {
-        gint status = 0;
         GError *error{nullptr};
         bool ret = false;
         guint count = 0;
@@ -163,18 +162,12 @@ namespace WifiManagerImpl
                 nullptr,
                 &error))
         {
-            if (status == 0)
+            for (guint i = 0; i < count; ++i)
             {
-                for (guint i = 0; i < count; ++i)
-                {
-                    out.push_back(ids[i]);
-                }
-                ret = true;
+                out.push_back(ids[i]);
             }
-            else
-            {
-                LOGERR("Failed to call networkconfig1_call_get_interfaces_sync - status: %d", status);
-            }
+            ret = true;
+    
         }
         else
         {
