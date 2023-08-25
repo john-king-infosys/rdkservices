@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 
+#include <condition_variable>
 #include <memory>
 #include <fstream>
 #include <utility>
@@ -93,6 +94,8 @@ WK_EXPORT void WKPreferencesSetPageCacheEnabled(WKPreferencesRef preferences, bo
 #else
 #define HAS_MEMORY_PRESSURE_SETTINGS_API WEBKIT_CHECK_VERSION(2, 38, 0)
 #endif
+
+#define URL_LOAD_RESULT_TIMEOUT_MS                                   (15 * 1000)
 
 
 namespace WPEFramework {
@@ -888,7 +891,6 @@ static GSourceFuncs _handlerIntervention =
         WebKitImplementation()
             : Core::Thread(0, _T("WebKitBrowser"))
             , _config()
-            , _URL()
             , _dataPath()
             , _service(nullptr)
             , _headers()
@@ -1829,13 +1831,35 @@ static GSourceFuncs _handlerIntervention =
             return 0;
         }
 
+        std::string urlValue() const
+        {
+            std::unique_lock<std::mutex> lock{urlData_.mutex};
+            return urlData_.url;
+        }
+
+        std::string urlValue(std::string url)
+        {
+            std::unique_lock<std::mutex> lock{urlData_.mutex};
+            std::swap(urlData_.url, url);
+            return url;
+        }
+
         uint32_t URL(const string& URL) override
         {
+            using namespace std::chrono;
+
             TRACE(Trace::Information, (_T("New URL: %s"), URL.c_str()));
 
             if (_context != nullptr) {
                 using SetURLData = std::tuple<WebKitImplementation*, string>;
                 auto *data = new SetURLData(this, URL);
+
+                {
+                    std::unique_lock<std::mutex> lock{urlData_.mutex};
+                    urlData_.result = Core::ERROR_TIMEDOUT;
+                }
+                const auto now = steady_clock::now();
+
                 g_main_context_invoke_full(
                     _context,
                     G_PRIORITY_DEFAULT,
@@ -1844,16 +1868,14 @@ static GSourceFuncs _handlerIntervention =
                         WebKitImplementation* object = std::get<0>(data);
 
                         string url = std::get<1>(data);
-                        object->_adminLock.Lock();
-                        object->_URL = url;
-                        object->_adminLock.Unlock();
+                        object->urlValue(url);
 
                         object->SetResponseHTTPStatusCode(-1);
 #ifdef WEBKIT_GLIB_API
-                        webkit_web_view_load_uri(object->_view, object->_URL.c_str());
+                        webkit_web_view_load_uri(object->_view, object->urlValue().c_str());
 #else
                         object->SetNavigationRef(nullptr);
-                        auto shellURL = WKURLCreateWithUTF8CString(object->_URL.c_str());
+                        auto shellURL = WKURLCreateWithUTF8CString(object->urlValue().c_str());
                         WKPageLoadURL(object->_page, shellURL);
                         WKRelease(shellURL);
 #endif
@@ -1863,17 +1885,34 @@ static GSourceFuncs _handlerIntervention =
                     [](gpointer customdata) {
                         delete static_cast<SetURLData*>(customdata);
                     });
-            }
 
-            return Core::ERROR_NONE;
+                std::unique_lock<std::mutex> lock{urlData_.mutex};
+                urlData_.cond.wait_for(
+                    lock,
+                    milliseconds{URL_LOAD_RESULT_TIMEOUT_MS},
+                    [this](){return Core::ERROR_TIMEDOUT != urlData_.result;});
+
+                const auto diff = steady_clock::now() - now;
+
+                TRACE(
+                        Trace::Information,
+                        (_T("URL: %s, load result %s(%d), %dms"),
+                        urlData_.url.c_str(),
+                        Core::ERROR_NONE == urlData_.result ? "OK" : "NOK",
+                        int(urlData_.result),
+                        int(duration_cast<milliseconds>(diff).count())));
+
+                return urlData_.result;
+            }
+            else
+            {
+                return Core::ERROR_ILLEGAL_STATE;
+            }
         }
 
         uint32_t URL(string& url) const override
         {
-            _adminLock.Lock();
-            url = _URL;
-            _adminLock.Unlock();
-
+            url = urlValue();
             return 0;
         }
 
@@ -2221,15 +2260,33 @@ static GSourceFuncs _handlerIntervention =
 
         void OnURLChanged(const string& URL)
         {
-            _adminLock.Lock();
+            TRACE(Trace::Information, (_T("%s"), URL.c_str()));
 
-            bool isCurrentUrlBootUrl = _URL == _bootUrl;
+            bool isCurrentUrlBootUrl = urlValue() == _bootUrl;
             bool isNewUrlBootUrl = URL == _bootUrl;
             if(!isCurrentUrlBootUrl && isNewUrlBootUrl && !_bootUrl.empty()) {
                 TRACE(Trace::Information, (_T("New URL: %s"), URL.c_str()));
             }
 
-            _URL = URL;
+            urlValue(URL);
+
+            const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
+            static const auto metroDomain = _bootUrl.substr(0, _bootUrl.find('#'));
+            const bool isNewUrlMetroSubdomain = URL.find(metroDomain) != string::npos;
+            if (isNewUrlBootUrl || isNewUrlBlankUrl || isNewUrlMetroSubdomain) {
+                if (!urlData_.waitForFailedOrFinished) {
+                    TRACE(Trace::Information, (_T("Notify that URL has been loaded: %s"), URL.c_str()));
+                    std::unique_lock<std::mutex> lock{urlData_.mutex};
+                    urlData_.result = Core::ERROR_NONE;
+                    urlData_.cond.notify_one();
+                }
+            } else {
+                TRACE(Trace::Information, (_T("Start waiting for URL load result: %s"), URL.c_str()));
+                std::unique_lock<std::mutex> lock{urlData_.mutex};
+                urlData_.waitForFailedOrFinished = true;
+            }
+
+            _adminLock.Lock();
 
             std::list<Exchange::IWebBrowser::INotification*>::iterator index(_notificationClients.begin());
             {
@@ -2252,6 +2309,8 @@ static GSourceFuncs _handlerIntervention =
 #ifndef WEBKIT_GLIB_API
         void OnLoadFinished(const string& URL, WKNavigationRef navigation)
         {
+            TRACE(Trace::Information, (_T("%s (%p|%p)"), URL.c_str(), _navigationRef, navigation));
+
             if (_navigationRef != navigation) {
                 TRACE(Trace::Information, (_T("Ignore 'loadfinished' for previous navigation request")));
                 return;
@@ -2261,9 +2320,19 @@ static GSourceFuncs _handlerIntervention =
 #endif
         void OnLoadFinished(const string& URL)
         {
+            TRACE(Trace::Information, (_T("%s"), URL.c_str()));
+
+            urlValue(URL);
+
+            {
+                std::unique_lock<std::mutex> lock{urlData_.mutex};
+                urlData_.result = Core::ERROR_NONE;
+                urlData_.waitForFailedOrFinished = false;
+                urlData_.cond.notify_one();
+            }
+
             _adminLock.Lock();
 
-            _URL = URL;
             {
                 std::list<Exchange::IWebBrowser::INotification*>::iterator index(_notificationClients.begin());
 
@@ -2285,6 +2354,18 @@ static GSourceFuncs _handlerIntervention =
         }
         void OnLoadFailed(const string& URL)
         {
+            urlValue(URL);
+            const auto url = urlValue();
+
+            TRACE(Trace::Information, (_T("%s"), url.c_str()));
+
+            {
+                std::unique_lock<std::mutex> lock{urlData_.mutex};
+                urlData_.result = Core::ERROR_INCORRECT_URL;
+                urlData_.waitForFailedOrFinished = false;
+                urlData_.cond.notify_one();
+            }
+
             _adminLock.Lock();
 
             std::list<Exchange::IWebBrowser::INotification*>::iterator index(_notificationClients.begin());
@@ -2539,8 +2620,12 @@ static GSourceFuncs _handlerIntervention =
 
             bool environmentOverride(WebKitBrowser::EnvironmentOverride(_config.EnvironmentOverride.Value()));
 
-            if ((environmentOverride == false) || (Core::SystemInfo::GetEnvironment(_T("WPE_WEBKIT_URL"), _URL) == false)) {
-                _URL = _config.URL.Value();
+            {
+                std::string url;
+
+                if ((environmentOverride == false) || (Core::SystemInfo::GetEnvironment(_T("WPE_WEBKIT_URL"), url) == false)) {
+                    urlValue(_config.URL.Value());
+                }
             }
 
             Core::SystemInfo::SetEnvironment(_T("QUEUEPLAYER_FLUSH_MODE"), _T("3"), false);
@@ -2901,9 +2986,9 @@ static GSourceFuncs _handlerIntervention =
                         WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
                         if (object->_config.LoadBlankPageOnSuspendEnabled.Value()) {
                             const char kBlankURL[] = "about:blank";
-                            if (object->_URL != kBlankURL)
+                            if (object->urlValue() != kBlankURL)
                                 object->SetURL(kBlankURL);
-                            ASSERT(object->_URL == kBlankURL);
+                            ASSERT(object->urlValue() == kBlankURL);
                         }
 #ifdef WEBKIT_GLIB_API
                         webkit_web_view_suspend(object->_view);
@@ -3348,7 +3433,7 @@ static GSourceFuncs _handlerIntervention =
 
             _configurationCompleted.SetState(true);
 
-            URL(static_cast<const string>(_URL));
+            URL(static_cast<const string>(urlValue()));
 
             // Move into the correct state, as requested
             auto* backend = webkit_web_view_backend_get_wpe_backend(webkit_web_view_get_backend(_view));
@@ -3594,7 +3679,7 @@ static GSourceFuncs _handlerIntervention =
                 TRACE(Trace::Information, (_T("Current user agent: '%s'"), _config.UserAgent.Value().c_str()));
             }
 
-            URL(static_cast<const string>(_URL));
+            URL(static_cast<const string>(urlValue()));
 
             // Move into the correct state, as requested
             _adminLock.Lock();
@@ -3842,7 +3927,15 @@ static GSourceFuncs _handlerIntervention =
 
     private:
         Config _config;
-        string _URL;
+
+        struct {
+            mutable std::mutex mutex;
+            std::condition_variable cond;
+            string url;
+            uint32_t result = Core::ERROR_TIMEDOUT;
+            bool waitForFailedOrFinished = false;
+        } urlData_;
+
         string _dataPath;
         PluginHost::IShell* _service;
         string _headers;
