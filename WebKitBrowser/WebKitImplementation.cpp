@@ -1848,7 +1848,7 @@ static GSourceFuncs _handlerIntervention =
         {
             using namespace std::chrono;
 
-            TRACE(Trace::Information, (_T("New URL: %s"), URL.c_str()));
+            TRACE_L1("New URL: %s", URL.c_str());
 
             if (_context != nullptr) {
                 using SetURLData = std::tuple<WebKitImplementation*, string>;
@@ -1859,6 +1859,12 @@ static GSourceFuncs _handlerIntervention =
                     urlData_.result = Core::ERROR_TIMEDOUT;
                 }
                 const auto now = steady_clock::now();
+
+                {
+                    std::unique_lock<std::mutex> lock{urlData_.mutex};
+                    urlData_.loadResult.loadUrl = URL;
+                    urlData_.loadResult.waitForFailedOrFinished = true;
+                }
 
                 g_main_context_invoke_full(
                     _context,
@@ -1887,6 +1893,7 @@ static GSourceFuncs _handlerIntervention =
                     });
 
                 std::unique_lock<std::mutex> lock{urlData_.mutex};
+                TRACE_L1("Start waiting for the load result of url: %s", URL.c_str());
                 urlData_.cond.wait_for(
                     lock,
                     milliseconds{URL_LOAD_RESULT_TIMEOUT_MS},
@@ -1894,13 +1901,12 @@ static GSourceFuncs _handlerIntervention =
 
                 const auto diff = steady_clock::now() - now;
 
-                TRACE(
-                        Trace::Information,
-                        (_T("URL: %s, load result %s(%d), %dms"),
+                TRACE_L1(
+                        "URL: %s, load result %s(%d), %dms",
                         urlData_.url.c_str(),
                         Core::ERROR_NONE == urlData_.result ? "OK" : "NOK",
                         int(urlData_.result),
-                        int(duration_cast<milliseconds>(diff).count())));
+                        int(duration_cast<milliseconds>(diff).count()));
 
                 return urlData_.result;
             }
@@ -2260,12 +2266,12 @@ static GSourceFuncs _handlerIntervention =
 
         void OnURLChanged(const string& URL)
         {
-            TRACE(Trace::Information, (_T("%s"), URL.c_str()));
+            TRACE_L1("%s", URL.c_str());
 
             bool isCurrentUrlBootUrl = urlValue() == _bootUrl;
             bool isNewUrlBootUrl = URL == _bootUrl;
             if(!isCurrentUrlBootUrl && isNewUrlBootUrl && !_bootUrl.empty()) {
-                TRACE(Trace::Information, (_T("New URL: %s"), URL.c_str()));
+                TRACE_L1("New URL: %s", URL.c_str());
             }
 
             urlValue(URL);
@@ -2273,19 +2279,14 @@ static GSourceFuncs _handlerIntervention =
             const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
             static const auto metroDomain = _bootUrl.substr(0, _bootUrl.find('#'));
             const bool isNewUrlMetroSubdomain = URL.find(metroDomain) != string::npos;
-            if (isNewUrlBootUrl || isNewUrlBlankUrl || isNewUrlMetroSubdomain) {
-                if (!urlData_.waitForFailedOrFinished) {
-                    TRACE(Trace::Information, (_T("Notify that URL has been loaded: %s"), URL.c_str()));
-                    std::unique_lock<std::mutex> lock{urlData_.mutex};
-                    urlData_.result = Core::ERROR_NONE;
-                    urlData_.cond.notify_one();
-                }
-            } else {
-                TRACE(Trace::Information, (_T("Start waiting for URL load result: %s"), URL.c_str()));
-                std::unique_lock<std::mutex> lock{urlData_.mutex};
-                urlData_.waitForFailedOrFinished = true;
+            if (isNewUrlBlankUrl || (isNewUrlMetroSubdomain && !isNewUrlBootUrl)) {
+                /*
+                 * When loading URL from the same domain only notify::uri signal is being sent.
+                 * This scenario happens only for Metro domain addresses.
+                 * When those addresses are detected and URL() waits for the result, send notification.
+                 */
+                notifyUrlLoadResult(URL, Core::ERROR_NONE);
             }
-
             _adminLock.Lock();
 
             std::list<Exchange::IWebBrowser::INotification*>::iterator index(_notificationClients.begin());
@@ -2320,16 +2321,10 @@ static GSourceFuncs _handlerIntervention =
 #endif
         void OnLoadFinished(const string& URL)
         {
-            TRACE(Trace::Information, (_T("%s"), URL.c_str()));
+            TRACE_L1("%s", URL.c_str());
 
             urlValue(URL);
-
-            {
-                std::unique_lock<std::mutex> lock{urlData_.mutex};
-                urlData_.result = Core::ERROR_NONE;
-                urlData_.waitForFailedOrFinished = false;
-                urlData_.cond.notify_one();
-            }
+            notifyUrlLoadResult(URL, Core::ERROR_NONE);
 
             _adminLock.Lock();
 
@@ -2357,14 +2352,9 @@ static GSourceFuncs _handlerIntervention =
             urlValue(URL);
             const auto url = urlValue();
 
-            TRACE(Trace::Information, (_T("%s"), url.c_str()));
+            TRACE_L1("%s", url.c_str());
 
-            {
-                std::unique_lock<std::mutex> lock{urlData_.mutex};
-                urlData_.result = Core::ERROR_INCORRECT_URL;
-                urlData_.waitForFailedOrFinished = false;
-                urlData_.cond.notify_one();
-            }
+            notifyUrlLoadResult(URL, Core::ERROR_INCORRECT_URL);
 
             _adminLock.Lock();
 
@@ -3933,7 +3923,10 @@ static GSourceFuncs _handlerIntervention =
             std::condition_variable cond;
             string url;
             uint32_t result = Core::ERROR_TIMEDOUT;
-            bool waitForFailedOrFinished = false;
+            struct {
+                bool    waitForFailedOrFinished = false;
+                string  loadUrl;
+            } loadResult;
         } urlData_;
 
         string _dataPath;
@@ -3983,6 +3976,22 @@ static GSourceFuncs _handlerIntervention =
         gint64 _lastDumpTime;
         string _userScript;
         string _userStyleSheet;
+
+        void notifyUrlLoadResult(const string &URL, uint32_t result)
+        {
+            std::unique_lock<std::mutex> lock{urlData_.mutex};
+            TRACE_L1("waitForFailedOrFinished = %d, result = %s, url = %s",
+                        urlData_.loadResult.waitForFailedOrFinished,
+                        Core::ERROR_NONE == result ? "OK" : "NOK",
+                        URL.c_str());
+            if (urlData_.loadResult.waitForFailedOrFinished && URL.find(urlData_.loadResult.loadUrl) != string::npos) {
+                TRACE_L1("Notyfying with result = %s, url: %s\n", Core::ERROR_NONE == result ? "OK" : "NOK", URL.c_str());
+                urlData_.result = result;
+                urlData_.loadResult.waitForFailedOrFinished = false;
+                urlData_.loadResult.loadUrl = string("");
+                urlData_.cond.notify_one();
+            }
+        }
     };
 
     SERVICE_REGISTRATION(WebKitImplementation, 1, 0);
