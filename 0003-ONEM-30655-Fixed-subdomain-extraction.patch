@@ -1,0 +1,25 @@
+From ade722961259f30db34e9b1bdea45337d254ba8c Mon Sep 17 00:00:00 2001
+From: Marcin Mielczarczyk <marcin.mielczarczyk@redembedded.com>
+Date: Fri, 4 Aug 2023 12:43:59 +0200
+Subject: [PATCH 03/10] ONEM-30655: Fixed subdomain extraction
+
+---
+ WebKitBrowser/WebKitImplementation.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/WebKitBrowser/WebKitImplementation.cpp b/WebKitBrowser/WebKitImplementation.cpp
+index 0d7a843f..37ecf805 100644
+--- a/WebKitBrowser/WebKitImplementation.cpp
++++ b/WebKitBrowser/WebKitImplementation.cpp
+@@ -2266,7 +2266,7 @@ static GSourceFuncs _handlerIntervention =
+             urlValue(URL);
+ 
+             const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
+-            static const auto metroDomain = _bootUrl.substr(_bootUrl.find('#'));
++            static const auto metroDomain = _bootUrl.substr(0, _bootUrl.find('#'));
+             const bool isNewUrlMetroSubdomain = URL.find(metroDomain) != string::npos;
+             if (isNewUrlBootUrl || isNewUrlBlankUrl || isNewUrlMetroSubdomain) {
+                 if (!urlData_.waitForFailedOrFinished) {
+-- 
+2.25.1
+

@@ -1,0 +1,27 @@
+From 01727028e6931f836083e1f47d1b15eb3297c838 Mon Sep 17 00:00:00 2001
+From: Marcin Mielczarczyk <marcin.mielczarczyk@redembedded.com>
+Date: Fri, 4 Aug 2023 11:04:46 +0200
+Subject: [PATCH 02/10] ONEM-30655: Detect Metro subdomain
+
+---
+ WebKitBrowser/WebKitImplementation.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/WebKitBrowser/WebKitImplementation.cpp b/WebKitBrowser/WebKitImplementation.cpp
+index 3d4c2f68..0d7a843f 100644
+--- a/WebKitBrowser/WebKitImplementation.cpp
++++ b/WebKitBrowser/WebKitImplementation.cpp
+@@ -2266,7 +2266,9 @@ static GSourceFuncs _handlerIntervention =
+             urlValue(URL);
+ 
+             const bool isNewUrlBlankUrl = URL.find("about:blank") != string::npos;
+-            if (isNewUrlBootUrl || isNewUrlBlankUrl) {
++            static const auto metroDomain = _bootUrl.substr(_bootUrl.find('#'));
++            const bool isNewUrlMetroSubdomain = URL.find(metroDomain) != string::npos;
++            if (isNewUrlBootUrl || isNewUrlBlankUrl || isNewUrlMetroSubdomain) {
+                 if (!urlData_.waitForFailedOrFinished) {
+                     TRACE(Trace::Information, (_T("Notify that URL has been loaded: %s"), URL.c_str()));
+                     std::unique_lock<std::mutex> lock{urlData_.mutex};
+-- 
+2.25.1
+

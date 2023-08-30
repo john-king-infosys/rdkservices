@@ -1,0 +1,28 @@
+From 8f6566b2fabeae44cc1217d1948ee7f31f3eb6c1 Mon Sep 17 00:00:00 2001
+From: Marcin Mielczarczyk <marcin.mielczarczyk@redembedded.com>
+Date: Wed, 23 Aug 2023 23:15:05 +0200
+Subject: [PATCH 04/10] ONEM-31568: Pass client certificate private key from
+ CMake
+
+---
+ WebKitBrowser/CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/WebKitBrowser/CMakeLists.txt b/WebKitBrowser/CMakeLists.txt
+index e81af0a8..a15445cf 100644
+--- a/WebKitBrowser/CMakeLists.txt
++++ b/WebKitBrowser/CMakeLists.txt
+@@ -253,6 +253,10 @@ if(RDK6_SUPPORT)
+     target_compile_definitions(${MODULE_NAME} PRIVATE RDK6_SUPPORT)
+ endif()
+ 
++if(PLUGIN_WEBKITBROWSER_CLIENT_CERT_KEY_PASSWD)
++    target_compile_definitions(${PLUGIN_WEBKITBROWSER_IMPLEMENTATION} PRIVATE CLIENT_CERTS_PRIV_KEY_PASSWD="${PLUGIN_WEBKITBROWSER_CLIENT_CERT_KEY_PASSWD}")
++endif()
++
+ set_target_properties(${PLUGIN_WEBKITBROWSER_IMPLEMENTATION} PROPERTIES
+         CXX_STANDARD 11
+         CXX_STANDARD_REQUIRED YES
+-- 
+2.25.1
+

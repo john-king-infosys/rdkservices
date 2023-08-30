@@ -1,0 +1,26 @@
+From 1a7a3679421522781c3634d55dd311393175124d Mon Sep 17 00:00:00 2001
+From: suresh-khurdiya-epam <skhurdiya.contractor@libertyglobal.com>
+Date: Fri, 25 Aug 2023 17:02:03 +0530
+Subject: [PATCH 05/10] [ONEM-30487] : Setup logging verbosity for westeros
+ plugin
+
+---
+ WebKitBrowser/WebKitBrowser.config | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/WebKitBrowser/WebKitBrowser.config b/WebKitBrowser/WebKitBrowser.config
+index d9f10d35..3073dccf 100644
+--- a/WebKitBrowser/WebKitBrowser.config
++++ b/WebKitBrowser/WebKitBrowser.config
+@@ -65,7 +65,7 @@ map()
+     kv(xhrcache ${PLUGIN_WEBKITBROWSER_XHRCACHE})
+     kv(webgl ${PLUGIN_WEBKITBROWSER_WEBGL})
+     kv(threadedpainting ${PLUGIN_WEBKITBROWSER_THREADEDPAINTING})
+-    kv(gstdebug "3,GST_STATES:3,GST_PIPELINE:4,GST_EVENT:4,GST_BUS:4,webkit*:5,brcm*:5")
++    kv(gstdebug "3,GST_STATES:3,GST_PIPELINE:4,GST_EVENT:4,GST_BUS:4,webkit*:5,brcm*:5,westerosink*:5")
+     kv(webkitdebug "MediaSource,Media,MemoryPressure")
+     kv(gstnocolor true)
+     if(PLUGIN_WEBKITBROWSER_HEIGHT)
+-- 
+2.25.1
+
