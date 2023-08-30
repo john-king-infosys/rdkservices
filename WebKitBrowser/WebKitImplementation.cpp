@@ -412,10 +412,10 @@ static GSourceFuncs _handlerIntervention =
     static void CloseDown()
     {
         // Seems we are destructed.....If we still have a pointer to the implementation, Kill it..
-        if (implementation != nullptr) {
-            delete implementation;
-            implementation = nullptr;
-        }
+        //if (implementation != nullptr) {
+        //    delete implementation;
+        //    implementation = nullptr;
+        //}
     }
 
     class WebKitImplementation : public Core::Thread,
@@ -931,10 +931,10 @@ static GSourceFuncs _handlerIntervention =
             , _userStyleSheet()
         {
             // Register an @Exit, in case we are killed, with an incorrect ref count !!
-            if (atexit(CloseDown) != 0) {
-                TRACE(Trace::Information, (_T("Could not register @exit handler. Error: %d."), errno));
-                exit(EXIT_FAILURE);
-            }
+            //if (atexit(CloseDown) != 0) {
+            //    TRACE(Trace::Information, (_T("Could not register @exit handler. Error: %d."), errno));
+            //    exit(EXIT_FAILURE);
+            //}
 
             // The WebKitBrowser (WPE) can only be instantiated once (it is a process wide singleton !!!!)
             ASSERT(implementation == nullptr);
