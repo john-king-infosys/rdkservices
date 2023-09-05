@@ -3417,7 +3417,7 @@ static GSourceFuncs _handlerIntervention =
             if (_config.UserAgent.IsSet() == true && _config.UserAgent.Value().empty() == false) {
                 webkit_settings_set_user_agent(preferences, _config.UserAgent.Value().c_str());
             } else {
-                webkit_settings_set_user_agent_with_application_details(preferences, "WPE", "1.0");
+                webkit_settings_set_user_agent_with_application_details(preferences, "", "");
                 _config.UserAgent = webkit_settings_get_user_agent(preferences);
             }
 
