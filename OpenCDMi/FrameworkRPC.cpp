@@ -1342,6 +1342,22 @@ namespace Plugin {
 
         virtual ~OCDMImplementation()
         {
+            if (_service != nullptr) {
+                delete _service;
+            }
+
+            if (_entryPoint != nullptr) {
+                _entryPoint->Release();
+            }
+
+            if (_engine.IsValid()) {
+                _engine.Release();
+            }
+            _systemLibraries.clear();
+
+            _shell->Release();
+            _shell = nullptr;
+
             TRACE(Trace::Information, (_T("Destructed OCDMImplementation Service: %p"), this));
         }
 
@@ -1503,21 +1519,21 @@ namespace Plugin {
                 factory++;
             }
 
-            if (_service != nullptr) {
-                delete _service;
-            }
+            // if (_service != nullptr) {
+            //     delete _service;
+            // }
 
-            if (_entryPoint != nullptr) {
-                _entryPoint->Release();
-            }
+            // if (_entryPoint != nullptr) {
+            //     _entryPoint->Release();
+            // }
 
-            if (_engine.IsValid()) {
-                _engine.Release();
-            }
-            _systemLibraries.clear();
+            // if (_engine.IsValid()) {
+            //     _engine.Release();
+            // }
+            // _systemLibraries.clear();
 
-            _shell->Release();
-            _shell = nullptr;
+            // _shell->Release();
+            // _shell = nullptr;
         }
 
         virtual uint32_t Reset()
