@@ -205,7 +205,7 @@ namespace Plugin {
     {
         string model;
 
-        auto result = _deviceInfo->ModelName(model);
+        auto result = _deviceInfo->Model(model);
         if (result == Core::ERROR_NONE) {
             response.Model = model;
         }
@@ -263,7 +263,18 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::get_supportedaudioports(SupportedaudioportsData& response) const
     {
-        return AudioOutputs(response.SupportedAudioPorts);
+        RPC::IStringIterator* supportedAudioPorts = nullptr;
+
+        auto result = _deviceAudioCapabilities->SupportedAudioPorts(supportedAudioPorts);
+        if (result == Core::ERROR_NONE) {
+            string element;
+            while (supportedAudioPorts->Next(element) == true) {
+                response.SupportedAudioPorts.Add() = element;
+            }
+            supportedAudioPorts->Release();
+        }
+
+        return result;
     }
 
     // Property: supportedvideodisplays - Video ports supported on the device (all ports that are physically present)
@@ -272,7 +283,18 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::get_supportedvideodisplays(SupportedvideodisplaysData& response) const
     {
-        return VideoOutputs(response.SupportedVideoDisplays);
+        RPC::IStringIterator* supportedVideoDisplays = nullptr;
+
+        auto result = _deviceVideoCapabilities->SupportedVideoDisplays(supportedVideoDisplays);
+        if (result == Core::ERROR_NONE) {
+            string element;
+            while (supportedVideoDisplays->Next(element) == true) {
+                response.SupportedVideoDisplays.Add() = element;
+            }
+            supportedVideoDisplays->Release();
+        }
+
+        return result;
     }
 
     // Property: hostedid - EDID of the host
@@ -281,7 +303,14 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::get_hostedid(JsonData::DeviceInfo::HostedidData& response) const
     {
-        return HostEDID(response.EDID);
+        string edid;
+
+        auto result = _deviceVideoCapabilities->HostEDID(edid);
+        if (result == Core::ERROR_NONE) {
+            response.EDID = edid;
+        }
+
+        return result;
     }
 
     // Method: defaultresolution - Default resolution on the selected video display port
@@ -290,9 +319,20 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::endpoint_defaultresolution(const SupportedresolutionsParamsInfo& params, DefaultresolutionResultData& response) const
     {
-        const VideodisplayType& videooutput = params.VideoDisplay.Value();
-        return DefaultResolution(static_cast<Exchange::IDeviceVideoCapabilities::VideoOutput>(videooutput), response.DefaultResolution);
+        string defaultResolution;
 
+        auto result = _deviceVideoCapabilities->DefaultResolution(params.VideoDisplay.Value(), defaultResolution);
+        if (result == Core::ERROR_NONE) {
+            Core::EnumerateType<JsonData::DeviceInfo::Output_resolutionType> value(defaultResolution.c_str(), false);
+            if (value.IsSet()) {
+                response.DefaultResolution = value.Value();
+            } else {
+                TRACE(Trace::Fatal, (_T("Unknown value %s"), defaultResolution.c_str()));
+                result = Core::ERROR_GENERAL;
+            }
+        }
+
+        return result;
     }
 
     // Method: supportedresolutions - Supported resolutions on the selected video display port
@@ -301,8 +341,26 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::endpoint_supportedresolutions(const SupportedresolutionsParamsInfo& params, SupportedresolutionsResultData& response) const
     {
-        const VideodisplayType& videooutput = params.VideoDisplay.Value();
-        return Resolutions(static_cast<Exchange::IDeviceVideoCapabilities::VideoOutput>(videooutput), response.SupportedResolutions);
+        RPC::IStringIterator* supportedResolutions = nullptr;
+
+        auto result = _deviceVideoCapabilities->SupportedResolutions(params.VideoDisplay.Value(), supportedResolutions);
+        if (result == Core::ERROR_NONE) {
+            string element;
+            while (supportedResolutions->Next(element) == true) {
+                Core::EnumerateType<JsonData::DeviceInfo::Output_resolutionType> value(element.c_str(), false);
+                if (value.IsSet()) {
+                    response.SupportedResolutions.Add() = value.Value();
+                } else {
+                    TRACE(Trace::Fatal, (_T("Unknown value %s"), element.c_str()));
+                    result = Core::ERROR_GENERAL;
+
+                    break;
+                }
+            }
+            supportedResolutions->Release();
+        }
+
+        return result;
     }
 
     // Method: supportedhdcp - Supported HDCP version on the selected video display port
@@ -311,8 +369,14 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::endpoint_supportedhdcp(const SupportedresolutionsParamsInfo& params, SupportedhdcpResultData& response) const
     {
-        const VideodisplayType& videooutput = params.VideoDisplay.Value();
-        return Hdcp(static_cast<Exchange::IDeviceVideoCapabilities::VideoOutput>(videooutput), response.SupportedHDCPVersion);
+        Exchange::IDeviceVideoCapabilities::CopyProtection supportedHDCPVersion;
+
+        auto result = _deviceVideoCapabilities->SupportedHdcp(params.VideoDisplay.Value(), supportedHDCPVersion);
+        if (result == Core::ERROR_NONE) {
+            response.SupportedHDCPVersion = JsonData::DeviceInfo::SupportedhdcpResultData::Copy_protectionType(supportedHDCPVersion);
+        }
+
+        return result;
     }
 
     // Method: audiocapabilities - Audio capabilities for the specified audio port
@@ -321,10 +385,18 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::endpoint_audiocapabilities(const JsonData::DeviceInfo::AudiocapabilitiesParamsInfo& params, JsonData::DeviceInfo::AudiocapabilitiesResultData& response) const
     {
+        Exchange::IDeviceAudioCapabilities::IAudioCapabilityIterator* audioCapabilities = nullptr;
 
-        const AudioportType& audiooutput = params.AudioPort.Value();
-        return AudioCapabilities(static_cast<Exchange::IDeviceAudioCapabilities::AudioOutput>(audiooutput), response.AudioCapabilities);
+        auto result = _deviceAudioCapabilities->AudioCapabilities(params.AudioPort.Value(), audioCapabilities);
+        if (result == Core::ERROR_NONE) {
+            Exchange::IDeviceAudioCapabilities::AudioCapability element;
+            while (audioCapabilities->Next(element) == true) {
+                response.AudioCapabilities.Add() = JsonData::DeviceInfo::AudiocapabilitiesResultData::AudiocapabilityType(element);
+            }
+            audioCapabilities->Release();
+        }
 
+        return result;
     }
 
     // Method: ms12capabilities - MS12 audio capabilities for the specified audio port
@@ -333,8 +405,18 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::endpoint_ms12capabilities(const JsonData::DeviceInfo::AudiocapabilitiesParamsInfo& params, JsonData::DeviceInfo::Ms12capabilitiesResultData& response) const
     {
-        const AudioportType& audiooutput = params.AudioPort.Value();
-        return Ms12Capabilities(static_cast<Exchange::IDeviceAudioCapabilities::AudioOutput>(audiooutput), response.MS12Capabilities);
+        Exchange::IDeviceAudioCapabilities::IMS12CapabilityIterator* ms12Capabilities = nullptr;
+
+        auto result = _deviceAudioCapabilities->MS12Capabilities(params.AudioPort.Value(), ms12Capabilities);
+        if (result == Core::ERROR_NONE) {
+            Exchange::IDeviceAudioCapabilities::MS12Capability element;
+            while (ms12Capabilities->Next(element) == true) {
+                response.MS12Capabilities.Add() = JsonData::DeviceInfo::Ms12capabilitiesResultData::Ms12capabilityType(element);
+            }
+            ms12Capabilities->Release();
+        }
+
+        return result;
     }
 
     // Method: supportedms12audioprofiles - Supported MS12 audio profiles for the specified audio port
@@ -343,8 +425,18 @@ namespace Plugin {
     //  - ERROR_GENERAL: General error
     uint32_t DeviceInfo::endpoint_supportedms12audioprofiles(const JsonData::DeviceInfo::AudiocapabilitiesParamsInfo& params, JsonData::DeviceInfo::Supportedms12audioprofilesResultData& response) const
     {
-        const AudioportType& audiooutput = params.AudioPort.Value();
-        return Ms12Profiles(static_cast<Exchange::IDeviceAudioCapabilities::AudioOutput>(audiooutput), response.SupportedMS12AudioProfiles);
+        RPC::IStringIterator* supportedMS12AudioProfiles = nullptr;
+
+        auto result = _deviceAudioCapabilities->SupportedMS12AudioProfiles(params.AudioPort.Value(), supportedMS12AudioProfiles);
+        if (result == Core::ERROR_NONE) {
+            string element;
+            while (supportedMS12AudioProfiles->Next(element) == true) {
+                response.SupportedMS12AudioProfiles.Add() = element;
+            }
+            supportedMS12AudioProfiles->Release();
+        }
+
+        return result;
     }
 
 } // namespace Plugin

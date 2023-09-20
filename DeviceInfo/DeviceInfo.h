@@ -71,8 +71,8 @@ namespace Plugin {
             , _systemId()
             , _connectionId(0)
             , _deviceInfo(nullptr)
-            , _deviceAudioCapabilityInterface(nullptr)
-            , _deviceVideoCapabilityInterface(nullptr)
+            , _deviceAudioCapabilities(nullptr)
+            , _deviceVideoCapabilities(nullptr)
             , _firmwareVersion(nullptr)
         {
             RegisterAll();
@@ -88,8 +88,8 @@ namespace Plugin {
         INTERFACE_ENTRY(PluginHost::IWeb)
         INTERFACE_ENTRY(PluginHost::IDispatcher)
         INTERFACE_AGGREGATE(Exchange::IDeviceInfo, _deviceInfo)
-        INTERFACE_AGGREGATE(Exchange::IDeviceAudioCapabilities, _deviceAudioCapabilityInterface)
-        INTERFACE_AGGREGATE(Exchange::IDeviceVideoCapabilities, _deviceVideoCapabilityInterface)
+        INTERFACE_AGGREGATE(Exchange::IDeviceAudioCapabilities, _deviceAudioCapabilities)
+        INTERFACE_AGGREGATE(Exchange::IDeviceVideoCapabilities, _deviceVideoCapabilities)
         INTERFACE_AGGREGATE(Exchange::IFirmwareVersion, _firmwareVersion)
         END_INTERFACE_MAP
 
@@ -134,36 +134,6 @@ namespace Plugin {
         void AddressInfo(Core::JSON::ArrayType<JsonData::DeviceInfo::AddressesData>& addressInfo) const;
         void SocketPortInfo(JsonData::DeviceInfo::SocketinfoData& socketPortInfo) const;
 
-        using VideoOutputTypes = Core::JSON::ArrayType<Core::JSON::EnumType<JsonData::DeviceInfo::VideodisplayType>>;
-        using ScreenResolutionType = Core::JSON::EnumType<JsonData::DeviceInfo::Output_resolutionType>;
-        using ScreenResolutionTypes = Core::JSON::ArrayType<ScreenResolutionType>;
-        using CopyProtectionType = Core::JSON::EnumType<JsonData::DeviceInfo::CopyprotectionType>;
-        uint32_t VideoOutputs(VideoOutputTypes& videoOutputs) const;
-        uint32_t DefaultResolution(const Exchange::IDeviceVideoCapabilities::VideoOutput videoOutput, ScreenResolutionType& screenResolutionType) const;
-        uint32_t Resolutions(const Exchange::IDeviceVideoCapabilities::VideoOutput videoOutput, ScreenResolutionTypes& screenResolutionTypes) const;
-        uint32_t Hdcp(const Exchange::IDeviceVideoCapabilities::VideoOutput videoOutput, CopyProtectionType& copyProtectionType) const;
-
-        using AudioOutputTypes = Core::JSON::ArrayType<Core::JSON::EnumType<JsonData::DeviceInfo::AudioportType>>;
-        using AudioCapabilityTypes = Core::JSON::ArrayType<Core::JSON::EnumType<JsonData::DeviceInfo::AudiocapabilityType>>;
-        using Ms12CapabilityTypes = Core::JSON::ArrayType<Core::JSON::EnumType<JsonData::DeviceInfo::Ms12capabilityType>>;
-        using Ms12ProfileTypes = Core::JSON::ArrayType<Core::JSON::EnumType<JsonData::DeviceInfo::Ms12profileType>>;
-        uint32_t AudioOutputs(AudioOutputTypes& audioOutputs) const;
-        uint32_t AudioCapabilities(const Exchange::IDeviceAudioCapabilities::AudioOutput audioOutput, AudioCapabilityTypes& audioCapabilityTypes) const;
-        uint32_t Ms12Capabilities(const Exchange::IDeviceAudioCapabilities::AudioOutput audioOutput, Ms12CapabilityTypes& ms12CapabilityTypes) const;
-        uint32_t Ms12Profiles(const Exchange::IDeviceAudioCapabilities::AudioOutput audioOutput, Ms12ProfileTypes& ms12ProfileTypes) const;
-
-        inline uint32_t HostEDID(Core::JSON::String& Hostedid) const
-        {
-            string edid;
-            uint32_t status = _deviceVideoCapabilityInterface->HostEDID(edid);
-            if (status == Core::ERROR_NONE) {
-                Hostedid = edid;
-            }
-            return status;
-        }
-
-
-
     private:
         uint8_t _skipURL;
         PluginHost::IShell* _service;
@@ -171,8 +141,8 @@ namespace Plugin {
         string _systemId;
         uint32_t _connectionId;
         Exchange::IDeviceInfo* _deviceInfo;
-        Exchange::IDeviceAudioCapabilities* _deviceAudioCapabilityInterface;
-        Exchange::IDeviceVideoCapabilities* _deviceVideoCapabilityInterface;
+        Exchange::IDeviceAudioCapabilities* _deviceAudioCapabilities;
+        Exchange::IDeviceVideoCapabilities* _deviceVideoCapabilities;
         Exchange::IFirmwareVersion* _firmwareVersion;
     };
 
