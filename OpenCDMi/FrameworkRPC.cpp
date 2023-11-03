@@ -1365,6 +1365,7 @@ namespace Plugin {
 
         uint32_t InitializeAsync()
         {
+            fprintf(stderr, "OMWAPPI-1878 InitializeAsync\n");
             uint32_t result = Core::ERROR_NONE;
 
             // On activation subscribe, on deactivation un-subscribe
@@ -1378,11 +1379,14 @@ namespace Plugin {
             const string locator(_shell->DataPath() + config.Location.Value());
 
             // Before we start loading the mapping of the Keys to the factories, load the factories :-)
+            fprintf(stderr, "OMWAPPI-1878 Loading factories (*.drm)\n");
             Core::Directory entry(locator.c_str(), _T("*.drm"));
             std::map<const string, SystemFactory> factories;
 
             while (entry.Next() == true) {
                 Core::Library library(entry.Current().c_str());
+                std::string libraryFileName{Core::File::FileName(entry.Current())};
+                fprintf(stderr, "OMWAPPI-1878 Keysystem name for %s -> %s\n", entry.Current().c_str(), libraryFileName.c_str());
 
                 if (library.IsLoaded() == true) {
                     GetDRMSystemFunction handle = reinterpret_cast<GetDRMSystemFunction>(library.LoadFunction(_T("GetSystemFactory")));
@@ -1392,8 +1396,9 @@ namespace Plugin {
 
                         if (entry != nullptr) {
                             SystemFactory element;
-                            element.Name = Core::ClassNameOnly(entry->KeySystem()).Text();
+                            element.Name = libraryFileName.c_str();
                             element.Factory = entry;
+                            fprintf(stderr, "OMWAPPI-1878 _keySystems.push_back:%s\n", element.Name.c_str());
                             _keySystems.push_back(element.Name);
                             factories.insert(std::pair<const string, SystemFactory>(element.Name, element));
                             _systemLibraries.push_back(library);
@@ -1401,10 +1406,12 @@ namespace Plugin {
                     }
                 } else {
                     SYSLOG(Logging::Startup, (_T("Could not load factory [%s], error [%s]"), Core::File::FileNameExtended(entry.Current()).c_str(), library.Error().c_str()));
+                    fprintf(stderr, "OMWAPPI-1878 Could not load factory [%s], error [%s]\n", Core::File::FileNameExtended(entry.Current()).c_str(), library.Error().c_str());
                     result = Core::ERROR_OPENING_FAILED;
                 }
             }
 
+            fprintf(stderr, "OMWAPPI-1878 Loading mappings\n");
             Core::JSON::ArrayType<Config::Systems>::ConstIterator index(static_cast<const Config&>(config).KeySystems.Elements());
 
             while (index.Next() == true) {
@@ -1414,6 +1421,7 @@ namespace Plugin {
                 if ((system.empty() == false) && (index.Current().Designators.IsSet() == true)) {
                     Core::JSON::ArrayType<Core::JSON::String>::ConstIterator designators(static_cast<const Core::JSON::ArrayType<Core::JSON::String>&>(index.Current().Designators).Elements());
 
+                    fprintf(stderr, "OMWAPPI-1878 Finding factory for key system:%s\n", system.c_str());
                     // Find a factory for the key system:
                     std::map<const string, SystemFactory>::iterator factory(factories.find(system));
 
@@ -1421,10 +1429,12 @@ namespace Plugin {
                         const string designator(designators.Current().Value());
                         if (designator.empty() == false) {
                             if (factory != factories.end()) {
+                                fprintf(stderr, "OMWAPPI-1878 _systemToFactory.insert:%s->%s\n", designator.c_str(), factory->first.c_str());
                                 _systemToFactory.insert(std::pair<const std::string, SystemFactory>(designator, factory->second));
 
                             } else {
                                 SYSLOG(Logging::Startup, (_T("Required factory [%s], not found for [%s]"), system.c_str(), designator.c_str()));
+                                fprintf(stderr, "OMWAPPI-1878 Required factory [%s], not found for [%s]\n", system.c_str(), designator.c_str());
                                 result = Core::ERROR_OPENING_FAILED;
                             }
                         }
@@ -1444,6 +1454,7 @@ namespace Plugin {
                             }
                             widevineAwaitingConfig = true;
                         } else {
+                            fprintf(stderr, "OMWAPPI-1878 Factory->Initialize:%s\n", factory->first.c_str());
                             factory->second.Factory->Initialize(_shell, configuration);
                         }
                     }
@@ -1644,6 +1655,7 @@ namespace Plugin {
                 }
             }
 
+            fprintf(stderr, "OMWAPPI-1878 KeySystem(%s) => %p\n", keySystem.c_str(), result);
             TRACE(Trace::Information, ("KeySystem(%s) => %p", keySystem.c_str(), result));
             return (result);
         }
