@@ -305,7 +305,14 @@ namespace Plugin {
         nullptr, // checkUserMediaPermissionForOrigin
         nullptr, // runBeforeUnloadConfirmPanel
         nullptr, // fullscreenMayReturnToInline
-        willAddDetailedMessageToConsole,
+        //willAddDetailedMessageToConsole,
+        [](WKPageRef, WKStringRef, WKStringRef, uint64_t line, uint64_t column, WKStringRef message, WKStringRef url, const void* clientInfo) {
+          if (WPEFramework::Trace::TraceType<BrowserConsoleLog, &WPEFramework::Core::System::MODULE_NAME>::IsEnabled() == false)
+            return;
+          string urlStr = WebKit::Utils::WKStringToString(url);
+          string messageStr = WebKit::Utils::WKStringToString(message);
+          fprintf(stderr, "suresh [%s]:%s:%llu,%llu %s\n", consoleLogPrefix.c_str(), Core::FileNameOnly(urlStr.c_str()), line, column, messageStr.c_str());
+        },
     };
 
     WKNotificationProviderV0 _handlerNotificationProvider = {
@@ -3049,7 +3056,7 @@ static GSourceFuncs _handlerIntervention =
             GVariant* data = g_variant_new("(smsbms)",
                                            std::to_string(browser->_guid).c_str(), //s
                                            !browser->_config.Whitelist.Value().empty() ? browser->_config.Whitelist.Value().c_str() : nullptr, //ms
-                                           browser->_config.LogToSystemConsoleEnabled.Value(), //b
+                                           true /*browser->_config.LogToSystemConsoleEnabled.Value()*/, //b
                                            !browser->_config.MixedContentWhitelist.Value().empty() ? browser->_config.MixedContentWhitelist.Value().c_str() : nullptr); //ms
             webkit_web_context_set_web_extensions_initialization_user_data(context, data);
         }
@@ -4191,6 +4198,7 @@ static GSourceFuncs _handlerIntervention =
     {
         auto &self = *const_cast<WebKitImplementation*>(static_cast<const WebKitImplementation*>(clientInfo));
         TRACE_GLOBAL(BrowserConsoleLog, (self.GetConsoleLogPrefix(), message, line, column));
+        fprintf(stderr, "suresh 4202:[%s]:%s:%llu,%llu %s\n", consoleLogPrefix.c_str(), Core::FileNameOnly(urlStr.c_str()), line, column, messageStr.c_str());
     }
 #endif // !WEBKIT_GLIB_API
 } // namespace Plugin
