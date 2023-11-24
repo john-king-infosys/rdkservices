@@ -3045,7 +3045,7 @@ static GSourceFuncs _handlerIntervention =
         static void initializeWebExtensionsCallback(WebKitWebContext* context, WebKitImplementation* browser)
         {
             webkit_web_context_set_web_extensions_directory(context, browser->_extensionPath.c_str());
-            // FIX it
+	    // FIX it
             GVariant* data = g_variant_new("(smsbms)",
                                            std::to_string(browser->_guid).c_str(), //s
                                            !browser->_config.Whitelist.Value().empty() ? browser->_config.Whitelist.Value().c_str() : nullptr, //ms
