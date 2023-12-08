@@ -67,8 +67,8 @@ public:
             IARM_CHECK( IARM_Bus_RegisterEventHandler(IARM_BUS_DSMGR_NAME,IARM_BUS_DSMGR_EVENT_RES_POSTCHANGE, ResolutionChange) );
 
             //TODO: this is probably per process so we either need to be running in our own process or be carefull no other plugin is calling it
-            DS_RegisterForLog(dslogCallback);
-            DSClient_RegisterForLog(dslogCallback);
+            //DS_RegisterForLog(dslogCallback);
+            //DSClient_RegisterForLog(dslogCallback);
             device::Manager::Initialize();
             TRACE(Trace::Information, (_T("device::Manager::Initialize success")));
         }
