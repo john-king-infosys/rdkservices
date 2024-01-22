@@ -52,7 +52,6 @@ namespace Plugin {
             newState = JsonData::TraceControl::StateType::ENABLED;
             break;
         case TraceControl::state::DISABLED:
-            newState = JsonData::TraceControl::StateType::DISABLED;
             break;
         case TraceControl::state::TRISTATED:
             newState = JsonData::TraceControl::StateType::TRISTATED;
