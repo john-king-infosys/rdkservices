@@ -296,6 +296,12 @@ uint32_t OCIContainer::startContainer(const JsonObject &parameters, JsonObject &
     std::string bundlePath = parameters["bundlePath"].String();
     std::string command = parameters["command"].String();
     std::string westerosSocket = parameters["westerosSocket"].String();
+    const JsonArray eVars = parameters.HasLabel("envVars") ? parameters["envVars"].Array() : JsonArray();
+    std::vector<std::string> envVars = std::vector<std::string>();
+    for (int k = 0; k < eVars.Length(); k++)
+    {
+        envVars.push_back(eVars[k].String());
+    }
 
     // Can be used to pass file descriptors to container construction.
     // Currently unsupported, see DobbyProxy::startContainerFromBundle().
@@ -322,27 +328,18 @@ uint32_t OCIContainer::startContainer(const JsonObject &parameters, JsonObject &
 
     int descriptor;
 
-    // If no additional arguments, start the container
-    if ((command == "null" || command.empty()) && (westerosSocket == "null" || westerosSocket.empty()))
+    // Dobby expects empty strings if values not set
+    if (command == "null")
     {
-        LOGINFO("startContainerFromBundle: id: %s, containerPath: %s", id.c_str(), encrypted ? containerPath.c_str() : bundlePath.c_str());
-        descriptor = mDobbyProxy->startContainerFromBundle(id, encrypted ? containerPath : bundlePath, emptyList);
+        command = "";
     }
-    else
+    if (westerosSocket == "null")
     {
-        // Dobby expects empty strings if values not set
-        if (command == "null" || command.empty())
-        {
-            command = "";
-        }
-        if (westerosSocket == "null" || westerosSocket.empty())
-        {
-            westerosSocket = "";
-        }
+        westerosSocket = "";
+    }
 
-        LOGINFO("startContainerFromBundle: id: %s, containerPath: %s, command: %s, westerosSocket: %s", id.c_str(), encrypted ? containerPath.c_str() : bundlePath.c_str(), command.c_str(), westerosSocket.c_str());
-        descriptor = mDobbyProxy->startContainerFromBundle(id, encrypted ? containerPath : bundlePath, emptyList, command, westerosSocket);
-    }
+    LOGINFO("startContainerFromBundle: id: %s, containerPath: %s, command: %s, westerosSocket: %s", id.c_str(), encrypted ? containerPath.c_str() : bundlePath.c_str(), command.c_str(), westerosSocket.c_str());
+    descriptor = mDobbyProxy->startContainerFromBundle(id, encrypted ? containerPath : bundlePath, emptyList, command, westerosSocket, envVars);
 
     // startContainer returns -1 on failure
     if (descriptor <= 0)
