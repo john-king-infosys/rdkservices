@@ -1396,10 +1396,12 @@ static GSourceFuncs _handlerIntervention =
 
         uint32_t CollectGarbage() override
         {
+            fprintf(stderr, "xaxa in CollectGarbage - METHOD!\n");
             g_main_context_invoke_full(
                 _context,
                 G_PRIORITY_DEFAULT,
                 [](gpointer customdata) -> gboolean {
+                    fprintf(stderr, "xaxa in CollectGarbage - LAMBDA!\n");
                 WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
 #ifdef WEBKIT_GLIB_API
                 WebKitWebContext* context = webkit_web_view_get_context(object->_view);
@@ -2570,6 +2572,10 @@ static GSourceFuncs _handlerIntervention =
             if(!isCurrentUrlBootUrl && isNewUrlBootUrl && !_bootUrl.empty()) {
                 TRACE_L1("New URL: %s", URL.c_str());
                 ODH_WARNING("WPE0040", WPE_CONTEXT_WITH_URL(URL.c_str()), "New URL: %s", URL.c_str());
+
+                fprintf(stderr, "xaxa NEW URL IS BOOT : DO THE CLEANUP\n");
+                CollectGarbage();
+                fprintf(stderr, "xaxa CollectGarbage() FINISHED\n");
             }
 
             if (isNewUrlBlankUrl || (isCurrUrlMetroSubdomain && isNewUrlMetroSubdomain)) {
