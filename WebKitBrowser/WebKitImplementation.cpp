@@ -2756,13 +2756,15 @@ static GSourceFuncs _handlerIntervention =
                 gcCleaner->stop();
             }
 
+            notifyUrlLoadResult(URL, Core::ERROR_NONE);
+
             if (isNewUrlBlankUrl || (isCurrUrlMetroSubdomain && isNewUrlMetroSubdomain)) {
                 /*
                  * When loading URL from the same domain only notify::uri signal is being sent.
                  * This scenario happens only for Metro domain addresses.
                  * When those addresses are detected and URL() waits for the result, send notification.
                  */
-                notifyUrlLoadResult(URL, Core::ERROR_NONE);
+                // notifyUrlLoadResult(URL, Core::ERROR_NONE);
             } else {
                 /*
                  * When domains of changed URL and saved URL match, store an updated URL.
