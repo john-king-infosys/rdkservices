@@ -1016,7 +1016,7 @@ static GSourceFuncs _handlerIntervention =
                 if (sec == -1) return;
                 // TODO: threading issue Vs stop()/start() !!!!!
                 ++seconds_since_start;
-                if (sec == 7 || sec == 10 || sec == 20 || sec == 60) {
+                if (sec == 4 || sec == 7 || sec == 10 || sec == 20) {
                     fprintf(stderr, "xaxa in GCCleaner - LAMBDA!\n");
                     // WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
                     // WebKitWebContext* context = webkit_web_view_get_context(_browser.view);
