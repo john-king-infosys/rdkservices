@@ -53,9 +53,6 @@
 #include <dbus/dbus.h>
 #include <gio/gio.h>
 
-#include <thread>
-#include <chrono>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,7 +97,7 @@ WK_EXPORT void WKPreferencesSetPageCacheEnabled(WKPreferencesRef preferences, bo
 #define HAS_MEMORY_PRESSURE_SETTINGS_API WEBKIT_CHECK_VERSION(2, 38, 0)
 #endif
 
-#define URL_LOAD_RESULT_TIMEOUT_MS                                   (60 * 1000)
+#define URL_LOAD_RESULT_TIMEOUT_MS                                   (15 * 1000)
 
 namespace
 {
@@ -974,88 +971,71 @@ static GSourceFuncs _handlerIntervention =
 
         class GCCleaner
         {
-
             WebKitImplementation& _browser;
             GSource* _timerSource { nullptr };
 
-            std::atomic_int seconds_since_start;
+            std::atomic_int gc_executed_since_last_start;
             public:
 
             void start() {
-                seconds_since_start.store(0);
+                if (_timerSource) {
+                    TRACE(Trace::Information, (_T("GCCleaner already running; stop it first")));
+                    stop();
+                }
 
-                GMainContext* ctx = _browser._context;
-                _timerSource = g_timeout_source_new_seconds ( 1 );
+                _timerSource = g_timeout_source_new_seconds ( 4 );
 
                 g_source_set_callback (
                     _timerSource,
                     [](gpointer data) -> gboolean
                     {
-                        static_cast<GCCleaner*>(data)->XXX();
-                        return G_SOURCE_CONTINUE;
+                        if (static_cast<GCCleaner*>(data)->timerCallback()) {
+                            return G_SOURCE_CONTINUE;
+                        } else {
+                            return G_SOURCE_REMOVE;
+                        }
                     },
                     this,
                     nullptr
                     );
-                g_source_attach ( _timerSource, ctx );
+                g_source_attach ( _timerSource, _browser._context );
             }
 
             void stop() {
-                seconds_since_start.store(-1);
                 if (_timerSource) {
                     g_source_destroy(_timerSource);
                     g_source_unref(_timerSource);
                     _timerSource = nullptr;
+                    if (gc_executed_since_last_start.load() == 0) {
+                        // we want to run at least once
+                        TRACE(Trace::Information, (_T("GCCleaner: stopping without at least one invocation; execute GC now")));
+                        webkit_web_context_garbage_collect_javascript_objects(webkit_web_view_get_context(_browser._view));
+                    }
+                    gc_executed_since_last_start.store(0);
                 }
             }
 
-            void XXX()
+            bool timerCallback()
             {
-                int sec = seconds_since_start.load();
-                fprintf(stderr, "xaxa GCCleaner tick, seconds: %d\n", sec);
-                if (sec == -1) return;
-                // TODO: threading issue Vs stop()/start() !!!!!
-                ++seconds_since_start;
-                if (sec == 4 || sec == 7 || sec == 10 || sec == 20) {
-                    fprintf(stderr, "xaxa in GCCleaner - LAMBDA!\n");
-                    // WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
-                    // WebKitWebContext* context = webkit_web_view_get_context(_browser.view);
-                    webkit_web_context_garbage_collect_javascript_objects(webkit_web_view_get_context(_browser._view));
-                }
+                TRACE(Trace::Information, (_T("GCCleaner: running GC now")));
+                webkit_web_context_garbage_collect_javascript_objects(webkit_web_view_get_context(_browser._view));
+                ++gc_executed_since_last_start;
+                return gc_executed_since_last_start.load() < 4;
             }
 
             ~GCCleaner()
             {
-                if (_timerSource) {
-                    g_source_destroy (_timerSource);
-                    g_source_unref (_timerSource);
-                }
+                stop();
             }
 
             GCCleaner(WebKitImplementation& browser)
-                : _browser(browser),
-                seconds_since_start(-1)
+                : _browser(browser), gc_executed_since_last_start(0)
             {
-                // GMainContext* ctx = _browser._context;
-                // _timerSource = g_timeout_source_new_seconds ( 1 );
-
-                // g_source_set_callback (
-                //     _timerSource,
-                //     [](gpointer data) -> gboolean
-                //     {
-                //         static_cast<GCCleaner*>(data)->XXX();
-                //         return G_SOURCE_CONTINUE;
-                //     },
-                //     this,
-                //     nullptr
-                //     );
-                // g_source_attach ( _timerSource, ctx );
             }
 
             GCCleaner(const HangDetector&) = delete;
             GCCleaner& operator=(const HangDetector&) = delete;
         };
-//////////////////////////////
 
     private:
         WebKitImplementation(const WebKitImplementation&) = delete;
@@ -1484,12 +1464,10 @@ static GSourceFuncs _handlerIntervention =
 
         uint32_t CollectGarbage() override
         {
-            fprintf(stderr, "xaxa in CollectGarbage - METHOD!\n");
             g_main_context_invoke_full(
                 _context,
                 G_PRIORITY_DEFAULT,
                 [](gpointer customdata) -> gboolean {
-                    fprintf(stderr, "xaxa in CollectGarbage - LAMBDA!\n");
                 WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
 #ifdef WEBKIT_GLIB_API
                 WebKitWebContext* context = webkit_web_view_get_context(object->_view);
@@ -1504,89 +1482,6 @@ static GSourceFuncs _handlerIntervention =
             [](gpointer) {
             });
             return Core::ERROR_NONE;
-        }
-
-//                                      GDestroyNotify  notify);
-// GLIB_AVAILABLE_IN_ALL
-// guint    g_timeout_add_seconds      (guint           interval,
-//                                      GSourceFunc     function,
-//                                      gpointer        data);
-
-
-        void CollectGarbageTimeout_BREAKS(int timeoutSeconds)
-        {
-
-            GSource *_timer = g_timeout_source_new_seconds ( timeoutSeconds );
-            g_source_set_callback (
-                _timer,
-                [](gpointer customdata) -> gboolean
-                {
-                    WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
-                    fprintf(stderr, "xaxa in CollectGarbage - LAMBDA #3!\n");
-                    WebKitWebContext* context = webkit_web_view_get_context(object->_view);
-                    webkit_web_context_garbage_collect_javascript_objects(context);
-                    return G_SOURCE_REMOVE;
-                },
-                this,
-                [](gpointer) {
-                }
-                );
-            g_source_attach ( _timer, _context );
-
-#if 0
-            fprintf(stderr, "xaxa in CollectGarbage - timeout #2\n");
-            g_timeout_add_seconds(
-                timeoutSeconds,
-                [](gpointer customdata) -> gboolean {
-                    fprintf(stderr, "xaxa in CollectGarbage - LAMBDA #2!\n");
-                WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
-#ifdef WEBKIT_GLIB_API
-                WebKitWebContext* context = webkit_web_view_get_context(object->_view);
-                webkit_web_context_garbage_collect_javascript_objects(context);
-#else
-                auto context = WKPageGetContext(object->_page);
-                WKContextGarbageCollectJavaScriptObjects(context);
-#endif
-                return G_SOURCE_REMOVE;
-            },
-            this);
-#endif
-        }
-
-// GLIB_AVAILABLE_IN_ALL
-// void     g_main_context_invoke_full (GMainContext   *context,
-//                                      gint            priority,
-//                                      GSourceFunc     function,
-//                                      gpointer        data,
-//                                      GDestroyNotify  notify);
-        
-        void CollectGarbageTimeout(int timeoutSeconds) // works ok ...
-        {
-            fprintf(stderr, "xaxa in CollectGarbage - timeout!\n");
-            
-            (new std::thread([&,timeoutSeconds]() {
-                fprintf(stderr, "xaxa in CollectGarbage - LAMBDA - SLEEP!\n");
-                std::this_thread::sleep_for(std::chrono::seconds(timeoutSeconds));
-                fprintf(stderr, "xaxa in CollectGarbage - LAMBDA - INVOKE!\n");
-                g_main_context_invoke_full(
-                    _context,
-                    G_PRIORITY_DEFAULT,
-                    [](gpointer customdata) -> gboolean {
-                        fprintf(stderr, "xaxa in CollectGarbage - LAMBDA!\n");
-                    WebKitImplementation* object = static_cast<WebKitImplementation*>(customdata);
-    #ifdef WEBKIT_GLIB_API
-                    WebKitWebContext* context = webkit_web_view_get_context(object->_view);
-                    webkit_web_context_garbage_collect_javascript_objects(context);
-    #else
-                    auto context = WKPageGetContext(object->_page);
-                    WKContextGarbageCollectJavaScriptObjects(context);
-    #endif
-                    return G_SOURCE_REMOVE;
-                },
-                this,
-                [](gpointer) {
-                });
-            }))->detach();
         }
 
         uint32_t Headers(IStringIterator*& header) const override
@@ -2333,7 +2228,6 @@ static GSourceFuncs _handlerIntervention =
                             webkit_web_view_load_uri_and_cert(object->_view, url.c_str(), certificatedata.c_str());
                         }
 
-                        // xoxo
 #else
                         object->SetNavigationRef(nullptr);
                         auto shellURL = WKURLCreateWithUTF8CString(url.c_str());
@@ -2745,10 +2639,6 @@ static GSourceFuncs _handlerIntervention =
             if(!isCurrentUrlBootUrl && isNewUrlBootUrl && !_bootUrl.empty()) {
                 TRACE_L1("New URL: %s", URL.c_str());
                 ODH_WARNING("WPE0040", WPE_CONTEXT_WITH_URL(URL.c_str()), "New URL: %s", URL.c_str());
-
-                // fprintf(stderr, "xaxa NEW URL IS BOOT : DO THE CLEANUP\n");
-                // CollectGarbageTimeout(7);
-                // fprintf(stderr, "xaxa CollectGarbage() FINISHED\n");
                 fprintf(stderr, "xaxa NEW URL IS BOOT : START GCCLEANER\n");
                 gcCleaner->start();
             } else {
@@ -4259,9 +4149,6 @@ static GSourceFuncs _handlerIntervention =
 
         void CheckWebProcess()
         {
-
-            if (1+1==2) return;
-
             if ( _webProcessCheckInProgress )
                 return;
 
