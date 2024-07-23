@@ -991,7 +991,6 @@ static GSourceFuncs _handlerIntervention =
             , _httpCookieAcceptPolicy(WEBKIT_COOKIE_POLICY_ACCEPT_NO_THIRD_PARTY)
             , _webprocessPID(-1)
             , _extensionPath()
-            , _ignoreLoadFinishedOnce(false)
 #else
             , _view()
             , _page()
@@ -3354,10 +3353,6 @@ static GSourceFuncs _handlerIntervention =
         static void loadChangedCallback(WebKitWebView* webView, WebKitLoadEvent loadEvent, WebKitImplementation* browser)
         {
             if (loadEvent == WEBKIT_LOAD_FINISHED) {
-                if (browser->_ignoreLoadFinishedOnce) {
-                    browser->_ignoreLoadFinishedOnce = false;
-                    return;
-                }
                 const std::string uri = webkit_web_view_get_uri(webView);
                 if (browser->_httpStatusCode < 0 && uri.find("http", 0, 4) != std::string::npos &&
                     webkit_web_view_get_estimated_load_progress(webView) < 1.0)
@@ -3377,10 +3372,6 @@ static GSourceFuncs _handlerIntervention =
         {
             string message(string("{ \"url\": \"") + failingURI + string("\", \"Error message\": \"") + error->message + string("\", \"loadEvent\":") + Core::NumberType<uint32_t>(loadEvent).Text() + string(" }"));
             SYSLOG_GLOBAL(Logging::Notification, (_T("LoadFailed: %s"), message.c_str()));
-            if (g_error_matches(error, WEBKIT_NETWORK_ERROR, WEBKIT_NETWORK_ERROR_CANCELLED)) {
-                browser->_ignoreLoadFinishedOnce = true;
-                return;
-            }
             browser->OnLoadFailed(failingURI);
         }
         static void webProcessTerminatedCallback(VARIABLE_IS_NOT_USED WebKitWebView* webView, WebKitWebProcessTerminationReason reason, WebKitImplementation* browser)
@@ -4223,7 +4214,6 @@ static GSourceFuncs _handlerIntervention =
         WebKitCookieAcceptPolicy _httpCookieAcceptPolicy;
         pid_t _webprocessPID;
         string _extensionPath;
-        bool _ignoreLoadFinishedOnce;
 #else
         WKViewRef _view;
         WKPageRef _page;
