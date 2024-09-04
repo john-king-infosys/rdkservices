@@ -2189,11 +2189,16 @@ static GSourceFuncs _handlerIntervention =
             return string(new_url);
         }
 
-        uint32_t URL(const string& URLwithParams) override
+        uint32_t URL(const string& URLwithParams_) override
         {
             using namespace std::chrono;
             std::string newCertContents;
             std::string certsUrls;
+
+            const string URLwithParams = URLwithParams_ == "https://apps.sctv.ch/ottbigscreen-universal" ? string {"https://apps.sctv.ch/ottbigscreen-universal/"} : URLwithParams_;
+            if (URLwithParams != URLwithParams_) {
+                TRACE_L1("TODO: Corrected new URL from '%s' to '%s'", URLwithParams_.c_str(), URLwithParams.c_str());
+            }
             const string URL = getClientCertFromUrl(URLwithParams, newCertContents);
 
             TRACE_L1("New URL: %s", URL.c_str());
