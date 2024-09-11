@@ -729,6 +729,7 @@ static GSourceFuncs _handlerIntervention =
                 , ContentFilter()
                 , LoggingTarget()
                 , WebAudioEnabled(false)
+                , ICECandidateFilteringEnabled(true)
             {
                 Add(_T("webkitdebug"), &WebkitDebug);
                 Add(_T("gstdebug"), &GstDebug);
@@ -802,6 +803,7 @@ static GSourceFuncs _handlerIntervention =
                 Add(_T("contentfilter"), &ContentFilter);
                 Add(_T("loggingtarget"), &LoggingTarget);
                 Add(_T("webaudio"), &WebAudioEnabled);
+                Add(_T("icecandidatefiltering"), &ICECandidateFilteringEnabled);
             }
             ~Config()
             {
@@ -880,6 +882,7 @@ static GSourceFuncs _handlerIntervention =
             Core::JSON::String ContentFilter;
             Core::JSON::String LoggingTarget;
             Core::JSON::Boolean WebAudioEnabled;
+            Core::JSON::Boolean ICECandidateFilteringEnabled;
         };
 
         class HangDetector
@@ -3645,6 +3648,9 @@ static GSourceFuncs _handlerIntervention =
             // webaudio support
             webkit_settings_set_enable_webaudio(preferences, _config.WebAudioEnabled.Value());
 
+            // ICE candidate filtering
+            webkit_settings_set_enable_ice_candidate_filtering(preferences, _config.ICECandidateFilteringEnabled.Value());
+
             // Allow mixed content.
             bool allowMixedContent = !_config.Secure.Value();
             SYSLOG(Logging::Notification, (_T("Mixed content is %s\n"), (allowMixedContent ? "allowed" : "blocked")));
@@ -3857,6 +3863,9 @@ static GSourceFuncs _handlerIntervention =
 
             // webaudio support
             WKPreferencesSetWebAudioEnabled(preferences, _config.WebAudioEnabled.Value());
+
+            // Turn on/off ICE candidate filtering
+            WKPreferencesSetICECandidateFilteringEnabled(preferences, _config.ICECandidateFilteringEnabled.Value());
 
             WKPageGroupSetPreferences(pageGroup, preferences);
 
