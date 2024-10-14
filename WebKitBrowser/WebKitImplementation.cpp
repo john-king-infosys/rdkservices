@@ -1523,6 +1523,11 @@ static GSourceFuncs _handlerIntervention =
                 }
                 TRACE_L1("Adding user's script (uri: %s, empty: %d)", entry.c_str(), content.empty());
             }
+            return setUserScripts(userScriptsUris, userScriptsContent);
+        }
+
+        uint32_t setUserScripts(std::list<string>& userScriptsUris, std::vector<string>& userScriptsContent)
+        {
             using SetUserScriptsData = std::tuple<WebKitImplementation*, std::list<string>, std::vector<string>>;
             auto* data = new SetUserScriptsData(this, userScriptsUris, userScriptsContent);
 
@@ -1589,6 +1594,11 @@ static GSourceFuncs _handlerIntervention =
                 }
                 TRACE_L1("Adding user's style sheet (uri: %s, empty: %d)", entry.c_str(), content.empty());
             }
+            return setUserStyleSheets(userStyleSheetsUris, userStyleSheetsContent);
+        }
+
+        uint32_t setUserStyleSheets(std::list<string>& userStyleSheetsUris, std::vector<string>& userStyleSheetsContent)
+        {
             using SetUserStyleSheetsData = std::tuple<WebKitImplementation*, std::list<string>, std::vector<string>>;
             auto* data = new SetUserStyleSheetsData(this, userStyleSheetsUris, userStyleSheetsContent);
 
@@ -1631,6 +1641,36 @@ static GSourceFuncs _handlerIntervention =
                 });
 
             return Core::ERROR_NONE;
+        }
+
+        uint32_t LoadURL(const string& url, const string& useragent, const string& userScripts, const string& userStyleSheets) override
+        {
+            std::vector<string> userScriptsContent;
+            std::list<string> userScriptsUris;
+            for (string& entry : tokenize(userScripts, ",")) {
+                auto content = GetFileContent(entry);
+                if (!content.empty()) {
+                        userScriptsUris.push_back(entry);
+                        userScriptsContent.push_back(content);
+                }
+                TRACE_L1("Adding user's script (uri: %s, empty: %d)", entry.c_str(), content.empty());
+            }
+
+            std::vector<string> userStyleSheetsContent;
+            std::list<string> userStyleSheetsUris;
+            for (string& entry: tokenize(userStyleSheets, ",")) {
+                auto content = GetFileContent(entry);
+                if (!content.empty()) {
+                        userStyleSheetsUris.push_back(entry);
+                        userStyleSheetsContent.push_back(content);
+                }
+                TRACE_L1("Adding user's style sheet (uri: %s, empty: %d)", entry.c_str(), content.empty());
+            }
+
+            setUserScripts(userScriptsUris, userScriptsContent);
+            setUserStyleSheets(userStyleSheetsUris, userStyleSheetsContent);
+            UserAgent(useragent);
+            return URL(url);
         }
 
 #ifdef RDK6_SUPPORT
