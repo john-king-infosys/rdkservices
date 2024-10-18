@@ -3750,7 +3750,7 @@ static GSourceFuncs _handlerIntervention =
                      "allow-running-of-insecure-content", allowMixedContent,
                      "allow-display-of-insecure-content", allowMixedContent, nullptr);
 #endif
-
+            g_object_set(G_OBJECT(preferences), "webrtc-udp-ports-range", "6050:6055", nullptr);
             // ICE candidate filtering
             if (_config.ICECandidateFilteringEnabled.IsSet()) {
                 g_object_set(G_OBJECT(preferences),
