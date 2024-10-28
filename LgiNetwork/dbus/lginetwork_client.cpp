@@ -64,6 +64,7 @@ public:
 
 LgiNetworkClient::LgiNetworkClient()
 {
+    fprintf(stderr,"Gowthami-LgiNetworkClient\n");
     LOGINFO("user_data: %p", this);
 #ifdef GDBUS_USE_CODEGEN_IMPL
     LOGINFO("using gdbus-codegen impl");
@@ -74,6 +75,7 @@ LgiNetworkClient::LgiNetworkClient()
 
 LgiNetworkClient::~LgiNetworkClient()
 {
+    fprintf(stderr,"Gowthami-~LgiNetworkClient\n");	
     if (m_interface)
         Stop();
     LOGINFO("user_data: %p", this);
@@ -82,6 +84,7 @@ LgiNetworkClient::~LgiNetworkClient()
 void LgiNetworkClient::connectSignal(const char* signalName,
                                       GCallback callback)
 {
+    fprintf(stderr,"Gowthami-connectsignal\n");
 #ifdef GDBUS_USE_CODEGEN_IMPL
     auto object = m_interface;
 #else
@@ -114,6 +117,7 @@ void LgiNetworkClient::disconnectAllSignals()
 // returns vector containing all network interfaces
 std::vector<std::string>* LgiNetworkClient::getInterfaces()
 {
+	fprintf(stderr,"Gowthami-getinterface\n");
     GError* error = nullptr;
     guint count = 0;
     guint idx = 0;
@@ -233,6 +237,7 @@ bool LgiNetworkClient::getSpecificParamsForInterface(const std::string iface, st
 
 std::string LgiNetworkClient::getDefaultInterface()
 {
+	fprintf(stderr,"Gowthami-getdefaultinterface\n");
     std::string iface;
     GError* error = nullptr;
     gchar* out_id = nullptr;
@@ -396,6 +401,7 @@ static void handle_dbus_event(GDBusProxy *proxy,
 
 int LgiNetworkClient::Run()
 {
+    fprintf(stderr,"Gowthami-Run()\n");	
     LOGINFO("user_data: %p", this);
 
     m_loopThread = std::thread(&LgiNetworkClient::Worker, this);
@@ -461,6 +467,7 @@ void LgiNetworkClient::Worker()
 
 static void release_networkconfig1(Networkconfig1* interface)
 {
+	fprintf(stderr,"Gowthami-releasenetwork\n");
 #ifdef GDBUS_USE_CODEGEN_IMPL
     g_object_unref(interface);
 #else
@@ -476,8 +483,6 @@ void LgiNetworkClient::Stop()
     if (m_interface)
     {
         disconnectAllSignals();
-        release_networkconfig1(m_interface);
-        m_interface = nullptr;
         g_main_context_invoke(m_mainContext, +[](gpointer ptr) -> gboolean {
             LOGINFO("LgiNetworkClient::Stop() quit main loop TID: %u", gettid());
             g_main_loop_quit((GMainLoop*)ptr);
@@ -490,6 +495,9 @@ void LgiNetworkClient::Stop()
         else {
             LOGERR("Worker thread should be joinable");
         }
+	fprintf(stderr,"Gowthami-stop()\n");
+	release_networkconfig1(m_interface);
+        m_interface = nullptr;
         LOGINFO("signals disconnected");
     }
 }
